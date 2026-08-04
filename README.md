@@ -2,7 +2,7 @@
 
 **Sutram** (Sanskrit for "thread" — that which connects everything together) is an AI-native, multi-tenant Education Operating System for schools, colleges, universities, coaching institutes and research labs, built by **Pragyaan Labs**.
 
-Full product design docs (PRD, architecture, database, API, RBAC, AI features, DevOps, testing, etc.) live in [`docs/`](docs/README.md).
+Full product design docs (PRD, architecture, database, API, RBAC, AI feature, DevOps, testing, etc.) live in [`docs/`](docs/README.md).
 
 ## Monorepo layout
 
