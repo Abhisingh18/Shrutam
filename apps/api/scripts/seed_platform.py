@@ -37,22 +37,67 @@ ROLE_NAMES = {
     "guest": "Guest",
 }
 
-# Starter slice of the full 22-module x 18-role matrix from docs/04-rbac-security.md §3 —
-# only the `students` module, enough to drive the first vertical slice end-to-end.
-# Extend this table as each subsequent module ships.
-STUDENT_MODULE_PERMISSIONS = {
+# Progressive slice of the full 22-module x 18-role matrix from
+# docs/04-rbac-security.md §3, covering every module built so far. Student/
+# parent self-scoped access (e.g. "see only your own attendance") needs the
+# ABAC scope predicate from docs/04-rbac-security.md §1 which isn't wired at
+# the API layer yet — that's future work, so those two roles are deliberately
+# absent from most of this matrix rather than granted overly-broad access.
+MODULE_PERMISSIONS: dict[str, list[str]] = {
+    # Students — docs/03-database-design.md §5.1
     "students:profile:read": [
-        "institution_admin",
-        "principal",
-        "dean",
-        "registrar",
-        "hod",
-        "faculty",
-        "teaching_assistant",
-        "accountant",
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant", "accountant",
     ],
     "students:profile:write": ["institution_admin", "registrar"],
     "students:profile:delete": ["institution_admin"],
+
+    # Admissions
+    "admissions:application:read": ["institution_admin", "principal", "dean", "registrar"],
+    "admissions:application:write": ["institution_admin", "registrar"],
+    "admissions:application:delete": ["institution_admin"],
+    "admissions:application:convert": ["institution_admin", "registrar"],
+
+    # Academics (Departments/Programs/Subjects/Semesters/Sections) — permission
+    # prefix is `courses:` to match the reserved nav.config.ts entry.
+    "courses:catalog:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant",
+    ],
+    "courses:catalog:write": ["institution_admin", "registrar", "hod"],
+    "courses:catalog:delete": ["institution_admin"],
+
+    # Faculty
+    "faculty:profile:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod", "hr_manager",
+    ],
+    "faculty:profile:write": ["institution_admin", "hr_manager", "registrar"],
+    "faculty:profile:delete": ["institution_admin"],
+
+    # Attendance
+    "attendance:record:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant",
+    ],
+    "attendance:record:write": ["institution_admin", "faculty", "teaching_assistant", "registrar"],
+
+    # Examinations
+    "exams:schedule:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant",
+    ],
+    "exams:schedule:write": ["institution_admin", "registrar", "hod"],
+    "exams:schedule:delete": ["institution_admin"],
+    "exams:marks:write": ["institution_admin", "faculty", "teaching_assistant", "hod"],
+    "exams:results:publish": ["institution_admin", "registrar", "principal"],
+
+    # Fees & Finance
+    "fees:invoice:read": ["institution_admin", "principal", "accountant", "registrar"],
+    "fees:invoice:write": ["institution_admin", "accountant"],
+    "fees:invoice:delete": ["institution_admin"],
+    "fees:structure:read": ["institution_admin", "accountant", "principal"],
+    "fees:structure:write": ["institution_admin", "accountant"],
+    "fees:payment:write": ["institution_admin", "accountant"],
 }
 
 
@@ -75,7 +120,7 @@ async def main() -> None:
         existing_perms = {
             p.key: p for p in (await session.execute(select(Permission))).scalars().all()
         }
-        for key in STUDENT_MODULE_PERMISSIONS:
+        for key in MODULE_PERMISSIONS:
             if key not in existing_perms:
                 module = key.split(":", 1)[0]
                 perm = Permission(key=key, module=module)
@@ -87,7 +132,7 @@ async def main() -> None:
             (rp.role_id, rp.permission_id)
             for rp in (await session.execute(select(RolePermission))).scalars().all()
         }
-        for key, role_slugs in STUDENT_MODULE_PERMISSIONS.items():
+        for key, role_slugs in MODULE_PERMISSIONS.items():
             perm = existing_perms[key]
             for slug in role_slugs:
                 role = existing[slug]
@@ -97,7 +142,7 @@ async def main() -> None:
         await session.commit()
 
     await engine.dispose()
-    print(f"Seeded {len(ROLE_SLUGS)} roles and {len(STUDENT_MODULE_PERMISSIONS)} permissions.")
+    print(f"Seeded {len(ROLE_SLUGS)} roles and {len(MODULE_PERMISSIONS)} permissions.")
 
 
 if __name__ == "__main__":
