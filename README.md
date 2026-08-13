@@ -41,6 +41,12 @@ Frontend: http://localhost:3000 · API: http://localhost:8000/api/v1/docs
 
 ## Status
 
-Phase 1 (MVP) is in progress. Implemented end-to-end: tenant signup, JWT auth (login/refresh/logout), RBAC-enforced Students module (list/create/view/edit), with verified cross-tenant Row-Level Security isolation. Every other module in the canonical sidebar (Faculty, Academics, Attendance, Examinations, Fees, Library, Hostel, Transport, HR, Placement, Research, Communication, AI Assistant, Analytics, Settings) has its navigation entry and route wired but ships a "coming soon" stub — see [`docs/01-prd.md`](docs/01-prd.md) for the phase breakdown.
+**Phase 1 (MVP) and Phase 2 module scope are both implemented end-to-end**, each with real backend (tenant-scoped Postgres models + RBAC-gated FastAPI routers) and real frontend (pages built from four shared templates):
+
+- **Platform:** tenant signup, JWT auth (login/refresh/logout), 18-role RBAC catalog, verified cross-tenant Row-Level Security isolation
+- **Phase 1:** Students, Faculty, Academics (departments/subjects/programs/semesters/sections), Attendance (bulk mark + history), Examinations (+ marks entry), Fees & Finance (invoices + payments, auto status recomputation), Admissions (application → accept → convert-to-student)
+- **Phase 2:** Library (issue/return with copy tracking), Hostel (room allocation/vacate with occupancy tracking), Transport (vehicles/routes/passes), HR (employees + leave approval), Communication (announcements, draft/publish), Analytics & Reports (live cross-module summary dashboard)
+
+Remaining Phase 3 scope (Placement, Research, AI Assistant, Multi-campus, Settings, Alumni, Workflow Automation) has its nav entry and route wired but ships a "coming soon" stub — see [`docs/01-prd.md`](docs/01-prd.md) for the phase breakdown.
 
 A native mobile app is intentionally out of scope for now — the web app is fully responsive.
