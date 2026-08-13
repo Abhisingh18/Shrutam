@@ -98,6 +98,49 @@ MODULE_PERMISSIONS: dict[str, list[str]] = {
     "fees:structure:read": ["institution_admin", "accountant", "principal"],
     "fees:structure:write": ["institution_admin", "accountant"],
     "fees:payment:write": ["institution_admin", "accountant"],
+
+    # Library
+    "library:book:read": ["institution_admin", "principal", "librarian", "faculty", "teaching_assistant"],
+    "library:book:write": ["institution_admin", "librarian"],
+    "library:book:delete": ["institution_admin", "librarian"],
+    "library:issue:read": ["institution_admin", "librarian"],
+    "library:issue:write": ["institution_admin", "librarian"],
+
+    # Hostel
+    "hostel:room:read": ["institution_admin", "principal", "hostel_warden"],
+    "hostel:room:write": ["institution_admin", "hostel_warden"],
+    "hostel:room:delete": ["institution_admin"],
+    "hostel:allocation:read": ["institution_admin", "hostel_warden"],
+    "hostel:allocation:write": ["institution_admin", "hostel_warden"],
+
+    # Transport
+    "transport:vehicle:read": ["institution_admin", "transport_manager"],
+    "transport:vehicle:write": ["institution_admin", "transport_manager"],
+    "transport:vehicle:delete": ["institution_admin"],
+    "transport:route:read": ["institution_admin", "transport_manager", "principal"],
+    "transport:route:write": ["institution_admin", "transport_manager"],
+    "transport:route:delete": ["institution_admin"],
+    "transport:pass:read": ["institution_admin", "transport_manager"],
+    "transport:pass:write": ["institution_admin", "transport_manager"],
+
+    # HR (non-teaching staff — Faculty module covers teaching staff separately)
+    "hr:employee:read": ["institution_admin", "principal", "hr_manager"],
+    "hr:employee:write": ["institution_admin", "hr_manager"],
+    "hr:employee:delete": ["institution_admin"],
+    "hr:leave:read": ["institution_admin", "hr_manager"],
+    "hr:leave:write": ["institution_admin", "hr_manager"],
+    "hr:leave:approve": ["institution_admin", "hr_manager", "principal"],
+
+    # Communication
+    "communication:message:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant",
+    ],
+    "communication:message:write": ["institution_admin", "principal", "registrar"],
+    "communication:message:delete": ["institution_admin"],
+
+    # Analytics & Reports
+    "analytics:dashboard:read": ["institution_admin", "principal", "dean", "accountant", "registrar"],
 }
 
 
