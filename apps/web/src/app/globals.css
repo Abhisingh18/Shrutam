@@ -165,3 +165,25 @@
     @apply font-sans;
   }
 }
+
+/* Marketing-page-only decorative utilities */
+.bg-grid-pattern {
+  background-image: radial-gradient(circle, var(--foreground) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.05;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-16px) translateX(8px); }
+}
+.animate-float-slow {
+  animation: float-slow 9s ease-in-out infinite;
+}
+@keyframes float-slow-reverse {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(14px) translateX(-10px); }
+}
+.animate-float-slow-reverse {
+  animation: float-slow-reverse 11s ease-in-out infinite;
+}
