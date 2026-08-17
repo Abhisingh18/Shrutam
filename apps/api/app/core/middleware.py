@@ -36,6 +36,13 @@ class TenantResolutionMiddleware(BaseHTTPMiddleware):
         if path == "/":
             return await call_next(request)
 
+        # CORS preflight requests never carry the app's custom headers (browsers
+        # send them only on the real request) — must always pass through so
+        # CORSMiddleware can answer them, otherwise the browser blocks the real
+        # request entirely and every API call from the frontend silently fails.
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         tenant_id_raw = request.headers.get(settings.default_tenant_header)
         if not tenant_id_raw:
             host = request.headers.get("host", "")
