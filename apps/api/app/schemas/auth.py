@@ -49,3 +49,5 @@ class MeResponse(BaseModel):
     full_name: str
     role: str
     permissions: list[str] = Field(default_factory=list)
+    institution_name: str | None = None
+    institution_type: str | None = None

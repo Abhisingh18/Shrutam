@@ -15,7 +15,7 @@ export function Sidebar() {
   const { data: me } = useMe();
   const permissions = usePermissions();
 
-  const items = visibleNavItems(me?.role ?? "guest", permissions);
+  const items = visibleNavItems(me?.role ?? "guest", permissions, me?.institution_type);
 
   return (
     <aside
@@ -24,9 +24,18 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-64",
       )}
     >
-      <div className="h-14 flex items-center px-4 border-b border-sidebar-border">
+      <div className="flex flex-col justify-center px-4 py-2.5 border-b border-sidebar-border min-h-14">
         {!collapsed && (
-          <span className="font-semibold text-sidebar-primary tracking-tight">Sutram</span>
+          <>
+            <span className="font-semibold text-sidebar-primary tracking-tight leading-tight">
+              Sutram
+            </span>
+            {me?.institution_name && (
+              <span className="text-[11px] text-sidebar-foreground/60 truncate leading-tight">
+                {me.institution_name}
+              </span>
+            )}
+          </>
         )}
       </div>
 

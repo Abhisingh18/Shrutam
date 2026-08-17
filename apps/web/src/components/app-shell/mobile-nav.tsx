@@ -10,7 +10,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const { data: me } = useMe();
   const permissions = usePermissions();
-  const items = visibleNavItems(me?.role ?? "guest", permissions);
+  const items = visibleNavItems(me?.role ?? "guest", permissions, me?.institution_type);
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">

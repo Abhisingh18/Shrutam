@@ -5,6 +5,8 @@ export interface MeResponse {
   full_name: string;
   role: string;
   permissions: string[];
+  institution_name: string | null;
+  institution_type: "school" | "college" | "university" | "coaching" | "research_lab" | null;
 }
 
 export interface TokenPairResponse {

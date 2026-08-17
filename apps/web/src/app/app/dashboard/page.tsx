@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const firstName = me?.full_name?.split(" ")[0];
   const role = me?.role ?? "guest";
 
-  const allVisible = visibleNavItems(role, permissions);
+  const allVisible = visibleNavItems(role, permissions, me?.institution_type);
   const workspaceItems = allVisible.filter(
     (item) => item.implemented && item.href !== "/app/dashboard" && item.href !== PLATFORM_NAV_ITEM.href,
   );
@@ -72,7 +72,8 @@ export default function DashboardPage() {
         </h1>
         <p className="text-sm text-muted-foreground capitalize">
           {role.replace(/_/g, " ")}
-          {me?.tenant_id && " · signed in to your institution's workspace"}
+          {me?.institution_name && ` · ${me.institution_name}`}
+          {me?.institution_type && ` (${me.institution_type.replace(/_/g, " ")})`}
         </p>
       </div>
 

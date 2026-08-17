@@ -16,6 +16,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.auth import Permission, Role, RolePermission, User, UserRole, UserSession
+from app.models.tenancy import Institution
 from app.schemas.auth import LoginRequest, MeResponse, RefreshRequest, TokenPairResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -160,6 +161,9 @@ async def me(
     )
     permissions = (await db.execute(perm_stmt)).scalars().all()
 
+    institution_stmt = select(Institution).where(Institution.tenant_id == current_user.tenant_id)
+    institution = (await db.execute(institution_stmt)).scalar_one_or_none()
+
     return MeResponse(
         user_id=user.id,
         tenant_id=current_user.tenant_id,
@@ -167,4 +171,6 @@ async def me(
         full_name=user.full_name,
         role=current_user.role_slug,
         permissions=list(permissions),
+        institution_name=institution.name if institution else None,
+        institution_type=institution.institution_type.value if institution else None,
     )

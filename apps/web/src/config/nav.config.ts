@@ -73,16 +73,74 @@ export const PLATFORM_NAV_ITEM: NavItem = {
 
 const ROLE_SLUGS_WITH_PLATFORM_ACCESS = new Set(["super_admin"]);
 
-/** super_admin bypasses gating entirely (docs/04-rbac-security.md §2). */
-export function visibleNavItems(role: string, permissions: Set<string>): NavItem[] {
+export type InstitutionType = "school" | "college" | "university" | "coaching" | "research_lab";
+
+// Which modules are relevant for each institution type — a school doesn't run
+// Placement or Research, a research lab doesn't run Examinations or Hostel.
+// Dashboard/Settings are always relevant and aren't listed here. Anything not
+// listed for a type is hidden for that tenant regardless of role permission —
+// this is presentation-only curation, NOT a security boundary (the backend
+// permission check is what actually enforces access).
+const INSTITUTION_TYPE_MODULES: Record<InstitutionType, string[]> = {
+  school: [
+    "/app/admissions", "/app/students", "/app/faculty", "/app/academics",
+    "/app/attendance", "/app/examinations", "/app/finance", "/app/library",
+    "/app/hostel", "/app/transport", "/app/hr", "/app/communication", "/app/analytics",
+  ],
+  college: [
+    "/app/admissions", "/app/students", "/app/faculty", "/app/academics",
+    "/app/attendance", "/app/examinations", "/app/finance", "/app/library",
+    "/app/hostel", "/app/transport", "/app/hr", "/app/placement",
+    "/app/communication", "/app/analytics",
+  ],
+  university: [
+    "/app/admissions", "/app/students", "/app/faculty", "/app/academics",
+    "/app/attendance", "/app/examinations", "/app/finance", "/app/library",
+    "/app/hostel", "/app/transport", "/app/hr", "/app/placement", "/app/research",
+    "/app/communication", "/app/analytics", "/app/ai-assistant",
+  ],
+  coaching: [
+    "/app/admissions", "/app/students", "/app/faculty", "/app/academics",
+    "/app/attendance", "/app/examinations", "/app/finance",
+    "/app/communication", "/app/analytics",
+  ],
+  research_lab: [
+    "/app/admissions", "/app/faculty", "/app/research", "/app/hr",
+    "/app/communication", "/app/analytics",
+  ],
+};
+
+const ALWAYS_VISIBLE_HREFS = new Set(["/app/dashboard", "/app/settings"]);
+
+/**
+ * super_admin bypasses gating entirely (docs/04-rbac-security.md §2).
+ * `institutionType` further curates the module list to what that kind of
+ * institution actually runs — omit it (e.g. before /auth/me has loaded) to
+ * fall back to permission-only filtering.
+ */
+export function visibleNavItems(
+  role: string,
+  permissions: Set<string>,
+  institutionType?: InstitutionType | null,
+): NavItem[] {
   const items =
     role === "super_admin"
       ? [PLATFORM_NAV_ITEM, ...NAV_ITEMS]
       : NAV_ITEMS;
 
+  const relevantHrefs = institutionType ? INSTITUTION_TYPE_MODULES[institutionType] : null;
+
   return items.filter((item) => {
     if (item.href === PLATFORM_NAV_ITEM.href) {
       return ROLE_SLUGS_WITH_PLATFORM_ACCESS.has(role);
+    }
+    if (
+      relevantHrefs &&
+      role !== "super_admin" &&
+      !ALWAYS_VISIBLE_HREFS.has(item.href) &&
+      !relevantHrefs.includes(item.href)
+    ) {
+      return false;
     }
     if (item.requiredPermission === null) return true;
     if (role === "super_admin") return true;
