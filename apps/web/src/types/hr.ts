@@ -5,7 +5,7 @@ export interface Employee {
   phone: string | null;
   department_id: string | null;
   designation: string;
-  employment_type: "full_time" | "part_time" | "contract";
+  employment_type: "full_time" | "part_time" | "contract" | "intern";
   joining_date: string;
   status: "active" | "on_leave" | "resigned" | "terminated";
 }

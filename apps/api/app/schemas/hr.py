@@ -20,7 +20,7 @@ class EmployeeBase(BaseModel):
     department_id: uuid.UUID | None = None
     designation: str = Field(min_length=1, max_length=128)
     employment_type: str = Field(
-        default="full_time", pattern="^(full_time|part_time|contract)$"
+        default="full_time", pattern="^(full_time|part_time|contract|intern)$"
     )
     joining_date: date
 

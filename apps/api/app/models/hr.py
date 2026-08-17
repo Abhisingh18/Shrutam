@@ -17,6 +17,7 @@ class EmploymentType(str, enum.Enum):
     full_time = "full_time"
     part_time = "part_time"
     contract = "contract"
+    intern = "intern"
 
 
 class EmployeeStatus(str, enum.Enum):

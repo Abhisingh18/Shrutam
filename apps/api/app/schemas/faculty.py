@@ -11,7 +11,7 @@ class FacultyBase(BaseModel):
     department_id: uuid.UUID | None = None
     designation: str = Field(min_length=1, max_length=128)
     employment_type: str = Field(
-        default="full_time", pattern="^(full_time|part_time|visiting|contract)$"
+        default="full_time", pattern="^(full_time|part_time|visiting|contract|intern)$"
     )
     joining_date: date
 

@@ -23,7 +23,7 @@ const schema = z.object({
   email: z.email("Enter a valid email"),
   phone: z.string().optional(),
   designation: z.string().min(1, "Required"),
-  employment_type: z.enum(["full_time", "part_time", "contract"]),
+  employment_type: z.enum(["full_time", "part_time", "contract", "intern"]),
   joining_date: z.string().min(1, "Required"),
 });
 
@@ -89,6 +89,7 @@ function NewEmployeePage() {
               <SelectItem value="full_time">Full time</SelectItem>
               <SelectItem value="part_time">Part time</SelectItem>
               <SelectItem value="contract">Contract</SelectItem>
+              <SelectItem value="intern">Intern</SelectItem>
             </SelectContent>
           </Select>
         </FormField>
