@@ -32,6 +32,24 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    # Only populated when settings.environment != "production" — there's no
+    # email/SMS provider wired up yet (docs/12-devops.md notes this as
+    # future work), so dev/test environments get the link directly instead
+    # of silently going nowhere. Never populated outside development.
+    dev_reset_token: str | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=10, max_length=128)
+
+
 class TokenPairResponse(BaseModel):
     access_token: str
     refresh_token: str

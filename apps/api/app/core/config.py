@@ -32,6 +32,11 @@ class Settings(BaseSettings):
 
     default_tenant_header: str = "X-Tenant-ID"
 
+    # Login hardening — docs/04-rbac-security.md §5.
+    max_failed_login_attempts: int = 5
+    account_lockout_minutes: int = 15
+    password_reset_ttl_minutes: int = 30
+
 
 @lru_cache
 def get_settings() -> Settings:

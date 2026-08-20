@@ -30,3 +30,17 @@ export interface TenantSignupResponse {
   institution_id: string;
   admin_user_id: string;
 }
+
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  dev_reset_token: string | null;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  new_password: string;
+}

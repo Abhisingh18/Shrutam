@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -55,11 +57,29 @@ def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
 
 
+def generate_reset_token() -> tuple[str, str]:
+    """
+    Returns (raw_token, token_hash). The raw token goes in the reset link
+    (never stored); only its SHA-256 hash is persisted, so a database read
+    alone can't be used to reset a password — same principle as never
+    storing plaintext passwords, applied to bearer-style reset tokens.
+    """
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    return raw_token, token_hash
+
+
+def hash_reset_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode()).hexdigest()
+
+
 __all__ = [
     "hash_password",
     "verify_password",
     "create_access_token",
     "create_refresh_token",
     "decode_token",
+    "generate_reset_token",
+    "hash_reset_token",
     "JWTError",
 ]

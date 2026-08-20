@@ -77,6 +77,17 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Brute-force lockout — docs/04-rbac-security.md §5 (auth hardening).
+    failed_login_attempts: Mapped[int] = mapped_column(default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Password reset — token itself is never stored, only its hash (same
+    # pattern as refresh-token jti tracking), plus an expiry.
+    password_reset_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    password_reset_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     user_roles: Mapped[list["UserRole"]] = relationship(back_populates="user")
 
 
