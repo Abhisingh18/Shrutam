@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { visibleNavItems } from "@/config/nav.config";
+import { visibleNavItems, isSelfServiceRole, SELF_SERVICE_NAV_ITEMS } from "@/config/nav.config";
 import { useUIStore } from "@/stores/ui-store";
 import { useMe, usePermissions } from "@/hooks/use-me";
 
@@ -15,7 +15,10 @@ export function Sidebar() {
   const { data: me } = useMe();
   const permissions = usePermissions();
 
-  const items = visibleNavItems(me?.role ?? "guest", permissions, me?.institution_type);
+  const role = me?.role ?? "guest";
+  const items = isSelfServiceRole(role)
+    ? SELF_SERVICE_NAV_ITEMS
+    : visibleNavItems(role, permissions, me?.institution_type);
 
   return (
     <aside

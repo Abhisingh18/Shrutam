@@ -15,6 +15,7 @@ from app.api.v1 import (
     hostel,
     hr,
     library,
+    me,
     notifications,
     students,
     students_bulk,
@@ -44,3 +45,4 @@ api_router.include_router(analytics.router)
 api_router.include_router(documents.router)
 api_router.include_router(timetable.router)
 api_router.include_router(notifications.router)
+api_router.include_router(me.router)

@@ -60,6 +60,24 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/app/settings", icon: Settings, description: "Institution profile, users, roles and integrations.", requiredPermission: "settings:institution:read", phase: 1, implemented: false },
 ];
 
+export const SELF_SERVICE_ROLES = new Set(["student", "parent"]);
+
+export function isSelfServiceRole(role: string): boolean {
+  return SELF_SERVICE_ROLES.has(role);
+}
+
+// Students and parents get a deliberately narrow, self-scoped nav instead of
+// the admin module list — RBAC never grants them module permissions (see
+// scripts/seed_platform.py), so the admin nav would render almost empty for
+// them anyway. These routes are backed by /me/* endpoints that resolve each
+// caller's own linked student(s), not by role permission — see app/api/v1/me.py.
+export const SELF_SERVICE_NAV_ITEMS: NavItem[] = [
+  { label: "My Dashboard", href: "/app/dashboard", icon: LayoutDashboard, description: "Your overview.", requiredPermission: null, phase: 1, implemented: true },
+  { label: "My Attendance", href: "/app/me/attendance", icon: CalendarCheck, description: "Your attendance history.", requiredPermission: null, phase: 1, implemented: true },
+  { label: "My Fees", href: "/app/me/fees", icon: Wallet, description: "Invoices and payment status.", requiredPermission: null, phase: 1, implemented: true },
+  { label: "My Results", href: "/app/me/results", icon: FileCheck2, description: "Published exam results and CGPA.", requiredPermission: null, phase: 1, implemented: true },
+];
+
 // Super-admin-only platform console — docs/02-information-architecture.md §6.
 export const PLATFORM_NAV_ITEM: NavItem = {
   label: "Platform Admin",

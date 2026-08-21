@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { visibleNavItems } from "@/config/nav.config";
+import { visibleNavItems, isSelfServiceRole, SELF_SERVICE_NAV_ITEMS } from "@/config/nav.config";
 import { useMe, usePermissions } from "@/hooks/use-me";
 
 export function MobileNav() {
   const pathname = usePathname();
   const { data: me } = useMe();
   const permissions = usePermissions();
-  const items = visibleNavItems(me?.role ?? "guest", permissions, me?.institution_type);
+  const role = me?.role ?? "guest";
+  const items = isSelfServiceRole(role)
+    ? SELF_SERVICE_NAV_ITEMS
+    : visibleNavItems(role, permissions, me?.institution_type);
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
