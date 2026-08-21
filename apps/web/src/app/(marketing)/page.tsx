@@ -64,18 +64,18 @@ export default function HomePage() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 pt-20 pb-20 sm:pt-28 sm:pb-28">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="max-w-xl">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-6">
+            <div className="max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3.5 py-1.5 text-xs font-medium text-primary mb-6 shadow-sm shadow-primary/5">
                 <Sparkles className="size-3.5" />
                 AI-native, not AI-bolted-on
               </span>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
                 The Education Operating System, built for the{" "}
                 <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
                   AI era
                 </span>
               </h1>
-              <p className="mt-6 text-lg text-muted-foreground max-w-xl text-pretty">
+              <p className="mt-6 text-lg text-muted-foreground max-w-xl text-pretty leading-relaxed">
                 Sutram unifies admissions, academics, finance, HR and AI into one platform for
                 schools, colleges, universities, coaching institutes and research labs —
                 replacing a dozen disconnected tools with one.
@@ -83,14 +83,14 @@ export default function HomePage() {
               <div className="mt-10 flex flex-col sm:flex-row gap-3">
                 <Button
                   size="lg"
-                  className="shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-shadow"
+                  className="shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all"
                   asChild
                 >
                   <Link href="/signup">
                     Start free trial <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild>
+                <Button size="lg" variant="outline" className="hover:-translate-y-0.5 transition-transform" asChild>
                   <Link href="/demo">Request a demo</Link>
                 </Button>
               </div>
@@ -104,7 +104,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="lg:pl-4">
+            <div className="lg:pl-4 animate-in fade-in slide-in-from-bottom-8 duration-1000">
               <ProductMockup />
             </div>
           </div>
