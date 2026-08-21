@@ -103,6 +103,33 @@ class ProgramListResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Academic Year
+# ---------------------------------------------------------------------------
+
+
+class AcademicYearBase(BaseModel):
+    name: str = Field(min_length=1, max_length=32)
+    start_date: str
+    end_date: str
+    is_current: bool = False
+
+
+class AcademicYearCreate(AcademicYearBase):
+    pass
+
+
+class AcademicYearRead(AcademicYearBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+
+
+class AcademicYearListResponse(BaseModel):
+    data: list[AcademicYearRead]
+    meta: PaginationMeta
+
+
+# ---------------------------------------------------------------------------
 # Semester
 # ---------------------------------------------------------------------------
 

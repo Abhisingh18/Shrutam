@@ -9,6 +9,8 @@ import { DetailPageTemplate } from "@/components/templates/detail-page-template"
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStudent } from "@/hooks/use-students";
+import { DocumentList } from "@/components/documents/document-list";
+import { DocumentUploader } from "@/components/documents/document-uploader";
 
 function OverviewTab({ studentId }: { studentId: string }) {
   const { data: student, isLoading } = useStudent(studentId);
@@ -47,6 +49,15 @@ function ComingSoonTab({ label }: { label: string }) {
   );
 }
 
+function DocumentsTab({ studentId }: { studentId: string }) {
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <DocumentUploader ownerType="student" ownerId={studentId} />
+      <DocumentList ownerType="student" ownerId={studentId} />
+    </div>
+  );
+}
+
 function StudentDetailPage({ id }: { id: string }) {
   const router = useRouter();
   const { data: student } = useStudent(id);
@@ -75,7 +86,7 @@ function StudentDetailPage({ id }: { id: string }) {
         { value: "guardians", label: "Guardians", content: <ComingSoonTab label="Guardians" /> },
         { value: "attendance", label: "Attendance", content: <ComingSoonTab label="Attendance" /> },
         { value: "fees", label: "Fees", content: <ComingSoonTab label="Fees" /> },
-        { value: "documents", label: "Documents", content: <ComingSoonTab label="Documents" /> },
+        { value: "documents", label: "Documents", content: <DocumentsTab studentId={id} /> },
       ]}
       rightRail={
         <div className="space-y-4">

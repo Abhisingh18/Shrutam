@@ -6,8 +6,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_tenant_db
+from app.core.grading import compute_grade
 from app.core.permissions import CurrentUser, require_permission
 from app.models.examination import Exam, ExamMark, ExamStatus
+from app.models.student import Student
 from app.schemas.examination import (
     ExamCreate,
     ExamListResponse,
@@ -16,6 +18,7 @@ from app.schemas.examination import (
     ExamRead,
     ExamUpdate,
     PaginationMeta,
+    StudentCGPAResponse,
 )
 
 router = APIRouter(prefix="/examinations", tags=["examinations"])
@@ -143,7 +146,7 @@ async def update_exam_marks(
     current_user: CurrentUser = Depends(require_permission("exams:marks:write")),
     db: AsyncSession = Depends(get_tenant_db),
 ) -> list[ExamMarkRead]:
-    await _get_exam_or_404(exam_id, current_user.tenant_id, db)
+    exam = await _get_exam_or_404(exam_id, current_user.tenant_id, db)
 
     updated: list[ExamMark] = []
     for entry in body.marks:
@@ -161,15 +164,70 @@ async def update_exam_marks(
                 student_id=entry.student_id,
             )
             db.add(mark)
+
         mark.marks_obtained = entry.marks_obtained
-        mark.grade = entry.grade
         mark.remarks = entry.remarks
+        if entry.marks_obtained is not None:
+            # grade_point is always auto-derived from marks (it's what CGPA
+            # aggregates) — grade is auto-derived too unless the caller
+            # explicitly overrides the letter (e.g. a moderation bump),
+            # which the underlying grade_point deliberately doesn't follow.
+            computed_grade, computed_point = compute_grade(entry.marks_obtained, exam.max_marks)
+            mark.grade = entry.grade if entry.grade is not None else computed_grade
+            mark.grade_point = computed_point
+        else:
+            mark.grade = entry.grade
+            mark.grade_point = None
         updated.append(mark)
 
     await db.flush()
     response = [ExamMarkRead.model_validate(m) for m in updated]
     await db.commit()
     return response
+
+
+@router.get("/students/{student_id}/cgpa", response_model=StudentCGPAResponse)
+async def get_student_cgpa(
+    student_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("exams:schedule:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> StudentCGPAResponse:
+    """
+    Weighted by each exam's max_marks (a 100-mark final counts more than a
+    20-mark quiz) rather than a flat average of grade points — a simple
+    proxy for exam weight until Subject.credits-based weighting is wired up.
+    """
+    student_stmt = select(Student.id).where(
+        Student.id == student_id,
+        Student.tenant_id == current_user.tenant_id,
+        Student.deleted_at.is_(None),
+    )
+    if (await db.execute(student_stmt)).scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Student not found"}},
+        )
+
+    rows_stmt = (
+        select(ExamMark.grade_point, Exam.max_marks)
+        .join(Exam, Exam.id == ExamMark.exam_id)
+        .where(
+            ExamMark.tenant_id == current_user.tenant_id,
+            ExamMark.student_id == student_id,
+            ExamMark.deleted_at.is_(None),
+            ExamMark.grade_point.is_not(None),
+        )
+    )
+    rows = (await db.execute(rows_stmt)).all()
+
+    if not rows:
+        return StudentCGPAResponse(student_id=student_id, cgpa=None, exams_graded=0)
+
+    total_weight = sum(max_marks for _, max_marks in rows)
+    weighted_sum = sum(float(grade_point) * max_marks for grade_point, max_marks in rows)
+    cgpa = round(weighted_sum / total_weight, 2) if total_weight else None
+
+    return StudentCGPAResponse(student_id=student_id, cgpa=cgpa, exams_graded=len(rows))
 
 
 @router.post("/{exam_id}/publish", response_model=ExamRead)

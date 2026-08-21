@@ -38,9 +38,14 @@ function AcademicsListPage() {
         placeholder: "Search by name…",
       }}
       toolbarExtra={
-        <Button variant="outline" onClick={() => router.push("/app/academics/subjects")}>
-          View subjects
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => router.push("/app/academics/subjects")}>
+            View subjects
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/app/academics/timetable")}>
+            Timetable
+          </Button>
+        </div>
       }
       page={page}
       pageSize={pageSize}

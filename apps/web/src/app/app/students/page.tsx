@@ -24,6 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useStudents } from "@/hooks/use-students";
 import type { Student } from "@/types/student";
+import { StudentsBulkImportDialog } from "@/components/students/bulk-import-dialog";
+import { StudentsExportButton } from "@/components/students/export-button";
 
 const statusVariant: Record<Student["status"], string> = {
   active: "bg-success-bg text-success border-transparent",
@@ -54,6 +56,12 @@ function StudentsListPage() {
         },
         placeholder: "Search by name…",
       }}
+      toolbarExtra={
+        <div className="flex items-center gap-2">
+          <StudentsExportButton />
+          <StudentsBulkImportDialog />
+        </div>
+      }
       page={page}
       pageSize={pageSize}
       total={data?.meta.total ?? 0}

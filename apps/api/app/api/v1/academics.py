@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_tenant_db
 from app.core.permissions import CurrentUser, require_permission
 from app.models.academics import Department, Program, Section, Semester, Subject
+from app.models.tenancy import AcademicYear
 from app.schemas.academics import (
+    AcademicYearCreate,
+    AcademicYearListResponse,
+    AcademicYearRead,
     DepartmentCreate,
     DepartmentListResponse,
     DepartmentRead,
@@ -285,6 +289,52 @@ async def create_program(
     db.add(program)
     await db.flush()
     response = ProgramRead.model_validate(program)
+    await db.commit()
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Academic Year — list + create only (prerequisite for Semester -> Section,
+# which the Timetable module FKs into; added retroactively since nothing had
+# exposed AcademicYear via the API despite the model existing since the
+# platform-foundation wave).
+# ---------------------------------------------------------------------------
+
+
+@router.get("/academic-years", response_model=AcademicYearListResponse)
+async def list_academic_years(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> AcademicYearListResponse:
+    stmt = select(AcademicYear).where(
+        AcademicYear.tenant_id == current_user.tenant_id, AcademicYear.deleted_at.is_(None)
+    )
+    count_stmt = select(func.count()).select_from(AcademicYear).where(
+        AcademicYear.tenant_id == current_user.tenant_id, AcademicYear.deleted_at.is_(None)
+    )
+
+    total = (await db.execute(count_stmt)).scalar_one()
+    stmt = stmt.order_by(AcademicYear.start_date.desc()).offset((page - 1) * page_size).limit(page_size)
+    years = (await db.execute(stmt)).scalars().all()
+
+    return AcademicYearListResponse(
+        data=[AcademicYearRead.model_validate(y) for y in years],
+        meta=PaginationMeta(page=page, page_size=page_size, total=total),
+    )
+
+
+@router.post("/academic-years", response_model=AcademicYearRead, status_code=status.HTTP_201_CREATED)
+async def create_academic_year(
+    body: AcademicYearCreate,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> AcademicYearRead:
+    year = AcademicYear(tenant_id=current_user.tenant_id, **body.model_dump())
+    db.add(year)
+    await db.flush()
+    response = AcademicYearRead.model_validate(year)
     await db.commit()
     return response
 

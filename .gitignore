@@ -9,6 +9,7 @@ build/
 *.log
 .venv/
 __pycache__/
+apps/api/uploads/
 *.pyc
 .pytest_cache/
 .coverage

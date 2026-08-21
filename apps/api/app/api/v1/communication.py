@@ -5,8 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.notifications import create_notification
 from app.core.db import get_tenant_db
 from app.core.permissions import CurrentUser, require_permission
+from app.models.auth import User
 from app.models.communication import Announcement
 from app.schemas.communication import (
     AnnouncementCreate,
@@ -124,6 +126,31 @@ async def publish_announcement(
 ) -> AnnouncementRead:
     announcement = await _get_announcement_or_404(announcement_id, current_user.tenant_id, db)
     announcement.published_at = datetime.now(timezone.utc)
+
+    # Fan out a notification to every active user in the tenant except the
+    # publisher themselves. Audience targeting (students-only, faculty-only,
+    # etc.) needs the announcement's `audience` string mapped to actual role
+    # membership, which isn't wired up yet — broadcasting to everyone is the
+    # correct conservative default until that mapping exists (see
+    # docs/10-ai-features.md-adjacent TODO: audience -> role resolution).
+    recipients_stmt = select(User.id).where(
+        User.tenant_id == current_user.tenant_id,
+        User.deleted_at.is_(None),
+        User.is_active.is_(True),
+        User.id != current_user.user_id,
+    )
+    recipient_ids = (await db.execute(recipients_stmt)).scalars().all()
+    for recipient_id in recipient_ids:
+        await create_notification(
+            db,
+            tenant_id=current_user.tenant_id,
+            user_id=recipient_id,
+            title=announcement.title,
+            body=announcement.body,
+            notification_type="announcement",
+            link_url=f"/app/communication/{announcement.id}",
+        )
+
     await db.flush()
     response = AnnouncementRead.model_validate(announcement)
     await db.commit()

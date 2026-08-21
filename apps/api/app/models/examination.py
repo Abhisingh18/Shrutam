@@ -55,4 +55,7 @@ class ExamMark(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin, Base):
     )
     marks_obtained: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
     grade: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    # Auto-derived from marks_obtained via app/core/grading.py whenever `grade`
+    # isn't explicitly overridden — never user-edited directly. Powers CGPA.
+    grade_point: Mapped[float | None] = mapped_column(Numeric(4, 2), nullable=True)
     remarks: Mapped[str | None] = mapped_column(String(500), nullable=True)

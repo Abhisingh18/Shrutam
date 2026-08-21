@@ -141,6 +141,25 @@ MODULE_PERMISSIONS: dict[str, list[str]] = {
 
     # Analytics & Reports
     "analytics:dashboard:read": ["institution_admin", "principal", "dean", "accountant", "registrar"],
+
+    # Documents (student/faculty file uploads)
+    "documents:file:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant", "hr_manager",
+    ],
+    "documents:file:write": ["institution_admin", "registrar", "hr_manager"],
+    "documents:file:delete": ["institution_admin"],
+
+    # Timetable (nested under Academics in the UI)
+    "timetable:slot:read": [
+        "institution_admin", "principal", "dean", "registrar", "hod",
+        "faculty", "teaching_assistant",
+    ],
+    "timetable:slot:write": ["institution_admin", "registrar", "hod"],
+    "timetable:slot:delete": ["institution_admin", "registrar"],
+
+    # Notifications are self-scoped (every authenticated user manages only
+    # their own) — no role-permission entries needed, see app/api/v1/notifications.py.
 }
 
 

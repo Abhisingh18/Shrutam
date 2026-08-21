@@ -55,6 +55,7 @@ class ExamMarkRead(BaseModel):
     student_id: uuid.UUID
     marks_obtained: float | None = None
     grade: str | None = None
+    grade_point: float | None = None
     remarks: str | None = None
 
 
@@ -67,3 +68,10 @@ class ExamMarkEntry(BaseModel):
 
 class ExamMarksBulkUpdateRequest(BaseModel):
     marks: list[ExamMarkEntry]
+
+
+class StudentCGPAResponse(BaseModel):
+    student_id: uuid.UUID
+    cgpa: float | None
+    scale: str = "10-point"
+    exams_graded: int

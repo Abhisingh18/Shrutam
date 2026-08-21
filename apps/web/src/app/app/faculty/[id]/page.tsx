@@ -9,6 +9,8 @@ import { DetailPageTemplate } from "@/components/templates/detail-page-template"
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacultyMember } from "@/hooks/use-faculty";
+import { DocumentList } from "@/components/documents/document-list";
+import { DocumentUploader } from "@/components/documents/document-uploader";
 
 function OverviewTab({ facultyId }: { facultyId: string }) {
   const { data: faculty, isLoading } = useFacultyMember(facultyId);
@@ -50,6 +52,15 @@ function ComingSoonTab({ label }: { label: string }) {
   );
 }
 
+function DocumentsTab({ facultyId }: { facultyId: string }) {
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <DocumentUploader ownerType="faculty" ownerId={facultyId} />
+      <DocumentList ownerType="faculty" ownerId={facultyId} />
+    </div>
+  );
+}
+
 function FacultyDetailPage({ id }: { id: string }) {
   const router = useRouter();
   const { data: faculty } = useFacultyMember(id);
@@ -75,6 +86,7 @@ function FacultyDetailPage({ id }: { id: string }) {
       }
       tabs={[
         { value: "overview", label: "Overview", content: <OverviewTab facultyId={id} /> },
+        { value: "documents", label: "Documents", content: <DocumentsTab facultyId={id} /> },
         { value: "attendance", label: "Attendance", content: <ComingSoonTab label="Attendance" /> },
         { value: "leaves", label: "Leaves", content: <ComingSoonTab label="Leaves" /> },
         { value: "payroll", label: "Payroll", content: <ComingSoonTab label="Payroll" /> },

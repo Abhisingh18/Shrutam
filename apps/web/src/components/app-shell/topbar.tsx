@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Menu, Search, Bell, LogOut } from "lucide-react";
+import { Menu, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuthStore } from "@/stores/auth-store";
 import { useMe } from "@/hooks/use-me";
 import { MobileNav } from "@/components/app-shell/mobile-nav";
+import { NotificationBell } from "@/components/app-shell/notification-bell";
 
 function initials(name: string): string {
   return name
@@ -59,9 +60,7 @@ export function Topbar() {
 
       <div className="flex-1 sm:hidden" />
 
-      <Button variant="ghost" size="icon" aria-label="Notifications">
-        <Bell className="size-5" />
-      </Button>
+      <NotificationBell />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

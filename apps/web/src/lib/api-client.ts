@@ -63,14 +63,18 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   const doFetch = async (): Promise<Response> => {
     const { tenantId, accessToken } = useAuthStore.getState();
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+    const headers: Record<string, string> = {};
+    // Skip the JSON content-type (and JSON.stringify below) for FormData bodies —
+    // the browser sets its own multipart/form-data content-type with the boundary.
+    if (!isFormData) headers["Content-Type"] = "application/json";
     if (!skipTenant && tenantId) headers["X-Tenant-ID"] = tenantId;
     if (!skipAuth && accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
     return fetch(buildUrl(path, params), {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
     });
   };
 
