@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, BellOff, Megaphone, ClipboardCheck, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,6 +18,11 @@ import {
 } from "@/hooks/use-notifications";
 import type { Notification } from "@/types/notification";
 import { cn } from "@/lib/utils";
+
+const TYPE_ICON: Record<string, typeof Bell> = {
+  announcement: Megaphone,
+  leave_request: ClipboardCheck,
+};
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -72,22 +77,25 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
           <Bell className="size-5" />
           {count > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px] leading-none"
-            >
-              {count > 9 ? "9+" : count}
-            </Badge>
+            <>
+              <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-destructive-solid animate-ping" />
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px] leading-none"
+              >
+                {count > 9 ? "9+" : count}
+              </Badge>
+            </>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="font-medium text-sm">Notifications</span>
+      <PopoverContent align="end" className="w-80 p-0 shadow-xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <span className="font-semibold text-sm text-foreground">Notifications</span>
           {count > 0 && (
             <button
               type="button"
-              className="text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
+              className="text-xs font-medium text-primary hover:underline disabled:opacity-50 disabled:no-underline"
               disabled={markAllRead.isPending}
               onClick={() => markAllRead.mutate()}
             >
@@ -96,33 +104,37 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="max-h-80 overflow-y-auto border-t border-border">
+        <div className="max-h-80 overflow-y-auto">
           {isLoading ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">Loading…</p>
           ) : notifications.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              No notifications yet
-            </p>
+            <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+              <BellOff className="size-6 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">You&apos;re all caught up</p>
+            </div>
           ) : (
-            <ul>
+            <ul className="divide-y divide-border">
               {notifications.map((notification) => {
                 const isUnread = notification.read_at === null;
+                const TypeIcon = TYPE_ICON[notification.notification_type] ?? Info;
                 return (
                   <li key={notification.id}>
                     <button
                       type="button"
                       onClick={() => handleSelect(notification)}
                       className={cn(
-                        "flex w-full gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted transition-colors",
+                        "flex w-full gap-3 px-4 py-3 text-left text-sm hover:bg-muted transition-colors",
                         isUnread && "bg-primary/5"
                       )}
                     >
                       <span
                         className={cn(
-                          "mt-1.5 size-1.5 shrink-0 rounded-full",
-                          isUnread ? "bg-primary" : "bg-transparent"
+                          "flex items-center justify-center size-8 rounded-full shrink-0",
+                          isUnread ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
                         )}
-                      />
+                      >
+                        <TypeIcon className="size-4" />
+                      </span>
                       <span className="flex-1 min-w-0">
                         <span className="flex items-center justify-between gap-2">
                           <span
@@ -138,11 +150,14 @@ export function NotificationBell() {
                           </span>
                         </span>
                         {notification.body && (
-                          <span className="block truncate text-xs text-muted-foreground">
+                          <span className="block truncate text-xs text-muted-foreground mt-0.5">
                             {notification.body}
                           </span>
                         )}
                       </span>
+                      {isUnread && (
+                        <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                      )}
                     </button>
                   </li>
                 );

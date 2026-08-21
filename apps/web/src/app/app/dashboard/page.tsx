@@ -9,12 +9,12 @@ import {
   Wallet,
   ArrowRight,
   Clock,
-  FileCheck2,
 } from "lucide-react";
 import { useMe, usePermissions } from "@/hooks/use-me";
 import { useAnalyticsSummary } from "@/hooks/use-analytics";
 import { useMyAttendance, useMyInvoices, useMyResults } from "@/hooks/use-me-portal";
 import { StatTile } from "@/components/widgets/stat-tile";
+import { CircularProgress } from "@/components/widgets/circular-progress";
 import { ChildSelector } from "@/components/me/child-selector";
 import {
   PLATFORM_NAV_ITEM,
@@ -84,14 +84,35 @@ function SelfServiceDashboard({ firstName }: { firstName: string | undefined }) 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatTile
-          label="Attendance rate"
-          value={attendanceRate !== null ? `${attendanceRate}%` : "—"}
-          icon={CalendarCheck}
+      <div className="rounded-xl border border-border bg-card p-6 flex flex-wrap items-center gap-8">
+        <CircularProgress
+          value={attendanceRate ?? 0}
+          size="md"
+          tone={
+            attendanceRate === null ? "primary" : attendanceRate >= 90 ? "success" : attendanceRate >= 75 ? "warning" : "destructive"
+          }
+          valueLabel={attendanceRate !== null ? `${attendanceRate}%` : "—"}
+          label="Attendance"
         />
-        <StatTile label="Outstanding invoices" value={outstandingCount} icon={Wallet} />
-        <StatTile label="CGPA" value={results?.cgpa.cgpa ?? "—"} icon={FileCheck2} />
+        <CircularProgress
+          value={results?.cgpa.cgpa ?? 0}
+          max={10}
+          size="md"
+          tone={
+            results?.cgpa.cgpa === null || results?.cgpa.cgpa === undefined
+              ? "primary"
+              : results.cgpa.cgpa >= 8
+                ? "success"
+                : results.cgpa.cgpa >= 6
+                  ? "warning"
+                  : "destructive"
+          }
+          valueLabel={results?.cgpa.cgpa !== null && results?.cgpa.cgpa !== undefined ? results.cgpa.cgpa.toFixed(1) : "—"}
+          label="CGPA"
+        />
+        <div className="flex-1 min-w-[160px]">
+          <StatTile label="Outstanding invoices" value={outstandingCount} icon={Wallet} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

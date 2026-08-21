@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { RequirePermission } from "@/components/auth/require-permission";
 import { usePermissions } from "@/hooks/use-me";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -45,6 +46,21 @@ const DAYS: { value: DayOfWeek; label: string }[] = [
 ];
 
 const NONE = "none";
+
+const SLOT_COLORS = [
+  "bg-chart-1/10 border-l-chart-1 text-chart-1",
+  "bg-chart-2/10 border-l-chart-2 text-chart-2",
+  "bg-chart-3/10 border-l-chart-3 text-chart-3",
+  "bg-chart-4/10 border-l-chart-4 text-chart-4",
+  "bg-chart-5/10 border-l-chart-5 text-chart-5",
+];
+
+/** Deterministic color per subject so the same subject always looks the same. */
+function colorForKey(key: string): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return SLOT_COLORS[hash % SLOT_COLORS.length];
+}
 
 function toHHMM(value: string): string {
   return value.slice(0, 5);
@@ -367,6 +383,7 @@ function TimetablePage() {
                   </div>
                   {DAYS.map((d) => {
                     const slot = slotByCell.get(`${d.value}-${row.start}-${row.end}`);
+                    const colorClasses = slot ? colorForKey(slot.subject_id ?? slot.id) : "";
                     return (
                       <button
                         key={d.value}
@@ -384,7 +401,12 @@ function TimetablePage() {
                                 }
                           )
                         }
-                        className="bg-background p-2 text-left text-xs transition-colors enabled:hover:bg-muted disabled:cursor-default"
+                        className={cn(
+                          "group p-2 text-left text-xs transition-colors disabled:cursor-default",
+                          slot
+                            ? cn("border-l-2", colorClasses)
+                            : "bg-background enabled:hover:bg-muted",
+                        )}
                       >
                         {slot ? (
                           <div className="space-y-0.5">
@@ -401,7 +423,11 @@ function TimetablePage() {
                             {slot.room && <div className="text-muted-foreground">{slot.room}</div>}
                           </div>
                         ) : (
-                          canWrite && <span className="text-muted-foreground">+ Add</span>
+                          canWrite && (
+                            <span className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                              + Add
+                            </span>
+                          )
                         )}
                       </button>
                     );

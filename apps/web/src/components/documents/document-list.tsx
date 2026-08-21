@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2, Trash2 } from "lucide-react";
+import { Download, FileImage, FileText, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,19 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function FileIcon({ contentType }: { contentType: string }) {
+  const isImage = contentType.startsWith("image/");
+  return (
+    <div
+      className={`flex items-center justify-center size-9 rounded-lg shrink-0 ${
+        isImage ? "bg-accent/10 text-accent" : "bg-info-bg text-info"
+      }`}
+    >
+      {isImage ? <FileImage className="size-4" /> : <FileText className="size-4" />}
+    </div>
+  );
 }
 
 function DocumentRow({
@@ -46,11 +59,18 @@ function DocumentRow({
   };
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+    <div className="flex items-center justify-between gap-4 px-4 py-3 text-sm hover:bg-muted/40 transition-colors">
       <div className="flex min-w-0 items-center gap-3">
-        <Badge variant="outline">{CATEGORY_LABELS[document.category]}</Badge>
-        <span className="truncate font-medium text-foreground">{document.file_name}</span>
-        <span className="shrink-0 text-muted-foreground">{formatSize(document.size_bytes)}</span>
+        <FileIcon contentType={document.content_type} />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-medium text-foreground">{document.file_name}</span>
+            <Badge variant="outline" className="shrink-0 text-[10px]">
+              {CATEGORY_LABELS[document.category]}
+            </Badge>
+          </div>
+          <span className="text-xs text-muted-foreground">{formatSize(document.size_bytes)}</span>
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
         <Button
@@ -104,11 +124,15 @@ export function DocumentList({
 
   const documents = data?.data ?? [];
   if (documents.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No documents uploaded yet.</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground rounded-lg border border-dashed border-border">
+        No documents uploaded yet.
+      </p>
+    );
   }
 
   return (
-    <div className="max-w-2xl divide-y divide-border rounded-lg border border-border">
+    <div className="max-w-2xl divide-y divide-border rounded-lg border border-border overflow-hidden">
       {documents.map((document) => (
         <DocumentRow
           key={document.id}

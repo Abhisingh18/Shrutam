@@ -1,82 +1,94 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { FileCheck2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChildSelector } from "@/components/me/child-selector";
+import { CircularProgress } from "@/components/widgets/circular-progress";
+import { GradeBadge } from "@/components/widgets/grade-badge";
 import { useMyResults } from "@/hooks/use-me-portal";
 
 export default function MyResultsPage() {
   const [studentId, setStudentId] = useState<string | undefined>();
   const { data, isLoading } = useMyResults(studentId);
 
+  const cgpa = data?.cgpa.cgpa;
+  const tone = cgpa === null || cgpa === undefined ? "primary" : cgpa >= 8 ? "success" : cgpa >= 6 ? "warning" : "destructive";
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-8">
       <div>
         <h1 className="text-xl font-semibold text-foreground">My Results</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-0.5">
           Only published results appear here — nothing shows before your institution
           publishes it.
         </p>
+        <div className="mt-3">
+          <ChildSelector selectedId={studentId} onSelect={setStudentId} />
+        </div>
       </div>
 
-      <ChildSelector selectedId={studentId} onSelect={setStudentId} />
-
       {data && (
-        <div className="rounded-lg border border-border bg-card p-4 max-w-xs">
-          <div className="text-sm text-muted-foreground">CGPA</div>
-          <div className="text-2xl font-bold text-foreground tabular-nums mt-1">
-            {data.cgpa.cgpa ?? "—"}
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {data.cgpa.exams_graded} exam{data.cgpa.exams_graded === 1 ? "" : "s"} · {data.cgpa.scale}
+        <div className="rounded-xl border border-border bg-card p-6 flex flex-col sm:flex-row items-center gap-8">
+          <CircularProgress
+            value={cgpa ?? 0}
+            max={10}
+            size="lg"
+            tone={tone}
+            valueLabel={cgpa !== null && cgpa !== undefined ? cgpa.toFixed(1) : "—"}
+            label="CGPA (10-point scale)"
+          />
+          <div className="flex-1 text-sm text-muted-foreground">
+            <p>
+              Based on <strong className="text-foreground">{data.cgpa.exams_graded}</strong>{" "}
+              published exam{data.cgpa.exams_graded === 1 ? "" : "s"}, weighted by each exam&apos;s
+              maximum marks.
+            </p>
           </div>
         </div>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Exam</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Marks</TableHead>
-            <TableHead>Grade</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading && (
-            <TableRow>
-              <TableCell colSpan={4}>
-                <Skeleton className="h-4 w-full" />
-              </TableCell>
-            </TableRow>
-          )}
-          {!isLoading && data?.results.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                No published results yet.
-              </TableCell>
-            </TableRow>
-          )}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-3">Exam results</h2>
+        {isLoading && (
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        )}
+        {!isLoading && data?.results.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border p-10 text-center">
+            <FileCheck2 className="size-8 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">No published results yet.</p>
+          </div>
+        )}
+        <div className="space-y-2">
           {data?.results.map((r) => (
-            <TableRow key={r.exam_id}>
-              <TableCell className="font-medium text-foreground">{r.exam_name}</TableCell>
-              <TableCell className="text-muted-foreground">{r.exam_type}</TableCell>
-              <TableCell className="tabular-nums">
-                {r.marks_obtained ?? "—"} / {r.max_marks}
-              </TableCell>
-              <TableCell className="font-medium">{r.grade ?? "—"}</TableCell>
-            </TableRow>
+            <div
+              key={r.exam_id}
+              className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4"
+            >
+              <div className="min-w-0">
+                <div className="font-medium text-foreground truncate">{r.exam_name}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{r.exam_type}</div>
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <div className="text-sm font-medium text-foreground tabular-nums">
+                    {r.marks_obtained ?? "—"} / {r.max_marks}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.marks_obtained !== null
+                      ? `${Math.round((r.marks_obtained / r.max_marks) * 100)}%`
+                      : ""}
+                  </div>
+                </div>
+                <GradeBadge grade={r.grade} />
+              </div>
+            </div>
           ))}
-        </TableBody>
-      </Table>
+        </div>
+      </div>
     </div>
   );
 }
