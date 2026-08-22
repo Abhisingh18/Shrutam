@@ -33,6 +33,9 @@ class FeeStructure(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin, Base)
     academic_year_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("academic_years.id"), nullable=True
     )
+    # Flat per-day penalty applied (on the fly, never persisted onto the invoice
+    # itself) to invoices raised off this structure once they go past due_date.
+    late_fee_per_day: Mapped[Numeric] = mapped_column(Numeric(8, 2), default=0, nullable=False)
 
 
 class InvoiceStatus(str, enum.Enum):

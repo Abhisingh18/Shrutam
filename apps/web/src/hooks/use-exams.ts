@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
+import { downloadPdf } from "@/lib/pdf-download";
 import type {
   Exam,
+  ExamAnalytics,
   ExamCreateInput,
   ExamListResponse,
   ExamMark,
   ExamMarksBulkUpdateInput,
+  ExamRankListResponse,
   ExamUpdateInput,
 } from "@/types/examination";
 
@@ -91,4 +94,27 @@ export function useUpdateExamMarks(examId: string) {
       apiFetch<ExamMark[]>(`/examinations/${examId}/marks`, { method: "PUT", body: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exams", "marks", examId] }),
   });
+}
+
+export function useExamRankList(examId: string | undefined) {
+  return useQuery({
+    queryKey: ["exams", "rank-list", examId],
+    queryFn: () => apiFetch<ExamRankListResponse>(`/examinations/${examId}/rank-list`),
+    enabled: Boolean(examId),
+  });
+}
+
+export function useExamAnalytics(examId: string | undefined) {
+  return useQuery({
+    queryKey: ["exams", "analytics", examId],
+    queryFn: () => apiFetch<ExamAnalytics>(`/examinations/${examId}/analytics`),
+    enabled: Boolean(examId),
+  });
+}
+
+export function downloadExamReportCard(studentId: string, admissionNumber: string): Promise<void> {
+  return downloadPdf(
+    `/examinations/students/${studentId}/report-card.pdf`,
+    `report-card-${admissionNumber}.pdf`,
+  );
 }

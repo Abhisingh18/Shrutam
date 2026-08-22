@@ -48,3 +48,30 @@ export interface ExamMarkEntry {
 export interface ExamMarksBulkUpdateInput {
   marks: ExamMarkEntry[];
 }
+
+export interface ExamRankEntry {
+  rank: number;
+  student_id: string;
+  student_name: string;
+  marks_obtained: number;
+  percentage: number;
+  grade: string | null;
+}
+
+export interface ExamRankListResponse {
+  exam_id: string;
+  max_marks: number;
+  data: ExamRankEntry[];
+}
+
+export interface ExamAnalytics {
+  exam_id: string;
+  students_graded: number;
+  average_marks: number | null;
+  highest_marks: number | null;
+  lowest_marks: number | null;
+  pass_count: number;
+  fail_count: number;
+  pass_percentage: number | null;
+  grade_distribution: Record<string, number>;
+}

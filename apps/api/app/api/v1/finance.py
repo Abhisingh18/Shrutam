@@ -1,19 +1,24 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_tenant_db
+from app.core.institution import get_institution_name
+from app.core.pdf import render_fee_receipt
 from app.core.permissions import CurrentUser, require_permission
 from app.models.finance import FeeStructure, Invoice, InvoiceStatus, Payment
+from app.models.student import Student
 from app.schemas.finance import (
     FeeStructureCreate,
     FeeStructureListResponse,
     FeeStructureRead,
     InvoiceCreate,
+    InvoiceDefaulterRead,
+    InvoiceDefaultersResponse,
     InvoiceListResponse,
     InvoiceRead,
     InvoiceUpdate,
@@ -23,6 +28,13 @@ from app.schemas.finance import (
 )
 
 router = APIRouter(prefix="/finance", tags=["finance"])
+
+
+async def _total_paid(invoice_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession) -> Decimal:
+    stmt = select(func.coalesce(func.sum(Payment.amount), 0)).where(
+        Payment.invoice_id == invoice_id, Payment.tenant_id == tenant_id, Payment.deleted_at.is_(None)
+    )
+    return (await db.execute(stmt)).scalar_one()
 
 
 @router.get("/fee-structures", response_model=FeeStructureListResponse)
@@ -107,6 +119,57 @@ async def create_invoice(
     response = InvoiceRead.model_validate(invoice)
     await db.commit()
     return response
+
+
+@router.get("/invoices/defaulters", response_model=InvoiceDefaultersResponse)
+async def list_invoice_defaulters(
+    current_user: CurrentUser = Depends(require_permission("fees:invoice:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> InvoiceDefaultersResponse:
+    """Every unpaid/partially-paid invoice past its due date, with an on-the-fly
+    late fee (days overdue * the originating fee structure's late_fee_per_day,
+    or 0 if the invoice wasn't raised off a structure)."""
+    today = date.today()
+    stmt = (
+        select(Invoice, Student.full_name, FeeStructure.late_fee_per_day)
+        .join(Student, Student.id == Invoice.student_id)
+        .outerjoin(FeeStructure, FeeStructure.id == Invoice.fee_structure_id)
+        .where(
+            Invoice.tenant_id == current_user.tenant_id,
+            Invoice.deleted_at.is_(None),
+            Invoice.due_date < today,
+            Invoice.status.in_([InvoiceStatus.pending, InvoiceStatus.partially_paid, InvoiceStatus.overdue]),
+        )
+        .order_by(Invoice.due_date)
+    )
+    rows = (await db.execute(stmt)).all()
+
+    entries: list[InvoiceDefaulterRead] = []
+    total_outstanding = Decimal("0")
+    for invoice, student_name, late_fee_per_day in rows:
+        paid = await _total_paid(invoice.id, current_user.tenant_id, db)
+        outstanding = invoice.amount - paid
+        if outstanding <= 0:
+            continue
+        days_overdue = (today - invoice.due_date).days
+        late_fee = (late_fee_per_day or Decimal("0")) * days_overdue
+        total_outstanding += outstanding
+        entries.append(
+            InvoiceDefaulterRead(
+                invoice_id=invoice.id,
+                invoice_number=invoice.invoice_number,
+                student_id=invoice.student_id,
+                student_name=student_name,
+                amount=invoice.amount,
+                total_paid=paid,
+                outstanding=outstanding,
+                due_date=invoice.due_date,
+                days_overdue=days_overdue,
+                late_fee=late_fee,
+            )
+        )
+
+    return InvoiceDefaultersResponse(data=entries, total_outstanding=total_outstanding)
 
 
 async def _get_invoice_or_404(
@@ -195,12 +258,7 @@ async def record_payment(
     db.add(payment)
     await db.flush()
 
-    paid_stmt = select(func.coalesce(func.sum(Payment.amount), 0)).where(
-        Payment.invoice_id == invoice_id,
-        Payment.tenant_id == current_user.tenant_id,
-        Payment.deleted_at.is_(None),
-    )
-    total_paid: Decimal = (await db.execute(paid_stmt)).scalar_one()
+    total_paid = await _total_paid(invoice_id, current_user.tenant_id, db)
 
     if total_paid >= invoice.amount:
         invoice.status = InvoiceStatus.paid
@@ -210,3 +268,64 @@ async def record_payment(
     response = PaymentRead.model_validate(payment)
     await db.commit()
     return response
+
+
+async def _get_payment_or_404(
+    payment_id: uuid.UUID, invoice_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> Payment:
+    stmt = select(Payment).where(
+        Payment.id == payment_id,
+        Payment.invoice_id == invoice_id,
+        Payment.tenant_id == tenant_id,
+        Payment.deleted_at.is_(None),
+    )
+    payment = (await db.execute(stmt)).scalar_one_or_none()
+    if payment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Payment not found"}},
+        )
+    return payment
+
+
+@router.get("/invoices/{invoice_id}/payments/{payment_id}/receipt.pdf")
+async def download_payment_receipt(
+    invoice_id: uuid.UUID,
+    payment_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("fees:invoice:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> Response:
+    invoice = await _get_invoice_or_404(invoice_id, current_user.tenant_id, db)
+    payment = await _get_payment_or_404(payment_id, invoice_id, current_user.tenant_id, db)
+
+    student_stmt = select(Student).where(
+        Student.id == invoice.student_id, Student.tenant_id == current_user.tenant_id
+    )
+    student = (await db.execute(student_stmt)).scalar_one_or_none()
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Student not found"}},
+        )
+
+    total_paid = await _total_paid(invoice_id, current_user.tenant_id, db)
+    institution_name = await get_institution_name(current_user.tenant_id, db)
+    pdf_bytes = render_fee_receipt(
+        institution_name=institution_name,
+        student_name=student.full_name,
+        admission_number=student.admission_number,
+        invoice_number=invoice.invoice_number,
+        payment_amount=payment.amount,
+        payment_date=payment.payment_date,
+        payment_method=payment.method.value,
+        reference_number=payment.reference_number,
+        invoice_amount=invoice.amount,
+        total_paid=total_paid,
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="receipt-{invoice.invoice_number}.pdf"'
+        },
+    )

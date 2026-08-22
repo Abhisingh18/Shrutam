@@ -13,8 +13,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_tenant_db
 from app.core.permissions import CurrentUser, require_permission
-from app.models.hostel import Hostel, Room, RoomAllocation, RoomAllocationStatus
+from app.models.hostel import (
+    ComplaintStatus,
+    Hostel,
+    HostelComplaint,
+    Room,
+    RoomAllocation,
+    RoomAllocationStatus,
+)
 from app.schemas.hostel import (
+    HostelComplaintListResponse,
+    HostelComplaintRead,
+    HostelComplaintResolve,
     HostelCreate,
     HostelListResponse,
     HostelRead,
@@ -279,5 +289,80 @@ async def vacate_room_allocation(
 
     await db.flush()
     response = RoomAllocationRead.model_validate(allocation)
+    await db.commit()
+    return response
+
+
+# --- Complaints (raise-side is self-scoped — see app/api/v1/me.py) ---
+
+
+async def _get_complaint_or_404(
+    complaint_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> HostelComplaint:
+    stmt = select(HostelComplaint).where(
+        HostelComplaint.id == complaint_id,
+        HostelComplaint.tenant_id == tenant_id,
+        HostelComplaint.deleted_at.is_(None),
+    )
+    complaint = (await db.execute(stmt)).scalar_one_or_none()
+    if complaint is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Complaint not found"}},
+        )
+    return complaint
+
+
+@router.get("/complaints", response_model=HostelComplaintListResponse)
+async def list_hostel_complaints(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    status_filter: str | None = Query(default=None, alias="status"),
+    room_id: uuid.UUID | None = Query(default=None),
+    current_user: CurrentUser = Depends(require_permission("hostel:complaint:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> HostelComplaintListResponse:
+    stmt = select(HostelComplaint).where(
+        HostelComplaint.tenant_id == current_user.tenant_id, HostelComplaint.deleted_at.is_(None)
+    )
+    count_stmt = select(func.count()).select_from(HostelComplaint).where(
+        HostelComplaint.tenant_id == current_user.tenant_id, HostelComplaint.deleted_at.is_(None)
+    )
+    if status_filter:
+        stmt = stmt.where(HostelComplaint.status == status_filter)
+        count_stmt = count_stmt.where(HostelComplaint.status == status_filter)
+    if room_id is not None:
+        stmt = stmt.where(HostelComplaint.room_id == room_id)
+        count_stmt = count_stmt.where(HostelComplaint.room_id == room_id)
+
+    total = (await db.execute(count_stmt)).scalar_one()
+    stmt = (
+        stmt.order_by(HostelComplaint.raised_date.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    complaints = (await db.execute(stmt)).scalars().all()
+
+    return HostelComplaintListResponse(
+        data=[HostelComplaintRead.model_validate(c) for c in complaints],
+        meta=PaginationMeta(page=page, page_size=page_size, total=total),
+    )
+
+
+@router.post("/complaints/{complaint_id}/resolve", response_model=HostelComplaintRead)
+async def resolve_hostel_complaint(
+    complaint_id: uuid.UUID,
+    body: HostelComplaintResolve,
+    current_user: CurrentUser = Depends(require_permission("hostel:complaint:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> HostelComplaintRead:
+    complaint = await _get_complaint_or_404(complaint_id, current_user.tenant_id, db)
+    complaint.status = ComplaintStatus(body.status)
+    complaint.resolution_notes = body.resolution_notes
+    if complaint.status == ComplaintStatus.resolved:
+        complaint.resolved_date = date.today()
+
+    await db.flush()
+    response = HostelComplaintRead.model_validate(complaint)
     await db.commit()
     return response

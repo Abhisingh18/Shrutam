@@ -1,20 +1,25 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_tenant_db
 from app.core.grading import compute_grade
+from app.core.institution import get_institution_name
+from app.core.pdf import render_report_card
 from app.core.permissions import CurrentUser, require_permission
 from app.models.examination import Exam, ExamMark, ExamStatus
 from app.models.student import Student
 from app.schemas.examination import (
+    ExamAnalyticsResponse,
     ExamCreate,
     ExamListResponse,
     ExamMarkRead,
     ExamMarksBulkUpdateRequest,
+    ExamRankEntry,
+    ExamRankListResponse,
     ExamRead,
     ExamUpdate,
     PaginationMeta,
@@ -228,6 +233,173 @@ async def get_student_cgpa(
     cgpa = round(weighted_sum / total_weight, 2) if total_weight else None
 
     return StudentCGPAResponse(student_id=student_id, cgpa=cgpa, exams_graded=len(rows))
+
+
+@router.get("/{exam_id}/rank-list", response_model=ExamRankListResponse)
+async def get_exam_rank_list(
+    exam_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("exams:schedule:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> ExamRankListResponse:
+    """Standard competition ranking (ties share a rank; the next rank skips
+    ahead by the tie-group size) over every graded student, highest marks first."""
+    exam = await _get_exam_or_404(exam_id, current_user.tenant_id, db)
+
+    rows_stmt = (
+        select(ExamMark, Student.full_name)
+        .join(Student, Student.id == ExamMark.student_id)
+        .where(
+            ExamMark.tenant_id == current_user.tenant_id,
+            ExamMark.exam_id == exam_id,
+            ExamMark.deleted_at.is_(None),
+            ExamMark.marks_obtained.is_not(None),
+        )
+        .order_by(ExamMark.marks_obtained.desc())
+    )
+    rows = (await db.execute(rows_stmt)).all()
+
+    entries: list[ExamRankEntry] = []
+    prev_marks: float | None = None
+    prev_rank = 0
+    for idx, (mark, student_name) in enumerate(rows, start=1):
+        marks = float(mark.marks_obtained)
+        rank = prev_rank if prev_marks is not None and marks == prev_marks else idx
+        prev_marks, prev_rank = marks, rank
+        entries.append(
+            ExamRankEntry(
+                rank=rank,
+                student_id=mark.student_id,
+                student_name=student_name,
+                marks_obtained=marks,
+                percentage=round(marks / exam.max_marks * 100, 2) if exam.max_marks else 0.0,
+                grade=mark.grade,
+            )
+        )
+
+    return ExamRankListResponse(exam_id=exam_id, max_marks=exam.max_marks, data=entries)
+
+
+@router.get("/{exam_id}/analytics", response_model=ExamAnalyticsResponse)
+async def get_exam_analytics(
+    exam_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("exams:schedule:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> ExamAnalyticsResponse:
+    exam = await _get_exam_or_404(exam_id, current_user.tenant_id, db)
+
+    marks_stmt = select(ExamMark.marks_obtained, ExamMark.grade).where(
+        ExamMark.tenant_id == current_user.tenant_id,
+        ExamMark.exam_id == exam_id,
+        ExamMark.deleted_at.is_(None),
+        ExamMark.marks_obtained.is_not(None),
+    )
+    rows = (await db.execute(marks_stmt)).all()
+
+    if not rows:
+        return ExamAnalyticsResponse(
+            exam_id=exam_id,
+            students_graded=0,
+            average_marks=None,
+            highest_marks=None,
+            lowest_marks=None,
+            pass_count=0,
+            fail_count=0,
+            pass_percentage=None,
+            grade_distribution={},
+        )
+
+    all_marks = [float(m) for m, _ in rows]
+    pass_count = sum(1 for _, grade in rows if grade != "F")
+    fail_count = len(rows) - pass_count
+    distribution: dict[str, int] = {}
+    for _, grade in rows:
+        key = grade or "Ungraded"
+        distribution[key] = distribution.get(key, 0) + 1
+
+    return ExamAnalyticsResponse(
+        exam_id=exam_id,
+        students_graded=len(rows),
+        average_marks=round(sum(all_marks) / len(all_marks), 2),
+        highest_marks=max(all_marks),
+        lowest_marks=min(all_marks),
+        pass_count=pass_count,
+        fail_count=fail_count,
+        pass_percentage=round(pass_count / len(rows) * 100, 2),
+        grade_distribution=distribution,
+    )
+
+
+async def _student_report_card_data(
+    student_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> tuple[Student, list[dict], float | None]:
+    student_stmt = select(Student).where(
+        Student.id == student_id, Student.tenant_id == tenant_id, Student.deleted_at.is_(None)
+    )
+    student = (await db.execute(student_stmt)).scalar_one_or_none()
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Student not found"}},
+        )
+
+    rows_stmt = (
+        select(ExamMark, Exam.name, Exam.exam_type, Exam.max_marks)
+        .join(Exam, Exam.id == ExamMark.exam_id)
+        .where(
+            ExamMark.tenant_id == tenant_id,
+            ExamMark.student_id == student_id,
+            ExamMark.deleted_at.is_(None),
+            Exam.status == ExamStatus.results_published,
+        )
+        .order_by(Exam.start_date.desc())
+    )
+    rows = (await db.execute(rows_stmt)).all()
+
+    results = [
+        {
+            "exam_name": exam_name,
+            "exam_type": exam_type,
+            "max_marks": max_marks,
+            "marks_obtained": float(mark.marks_obtained) if mark.marks_obtained is not None else None,
+            "grade": mark.grade,
+            "grade_point": float(mark.grade_point) if mark.grade_point is not None else None,
+        }
+        for mark, exam_name, exam_type, max_marks in rows
+    ]
+
+    weighted = [(r["grade_point"], r["max_marks"]) for r in results if r["grade_point"] is not None]
+    cgpa = None
+    if weighted:
+        total_weight = sum(w for _, w in weighted)
+        cgpa = round(sum(gp * w for gp, w in weighted) / total_weight, 2) if total_weight else None
+
+    return student, results, cgpa
+
+
+@router.get("/students/{student_id}/report-card.pdf")
+async def download_report_card(
+    student_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("exams:schedule:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> Response:
+    student, results, cgpa = await _student_report_card_data(
+        student_id, current_user.tenant_id, db
+    )
+    institution_name = await get_institution_name(current_user.tenant_id, db)
+    pdf_bytes = render_report_card(
+        institution_name=institution_name,
+        student_name=student.full_name,
+        admission_number=student.admission_number,
+        results=results,
+        cgpa=cgpa,
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="report-card-{student.admission_number}.pdf"'
+        },
+    )
 
 
 @router.post("/{exam_id}/publish", response_model=ExamRead)

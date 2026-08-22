@@ -16,6 +16,7 @@ from app.schemas.library import (
     BookListResponse,
     BookRead,
     BookUpdate,
+    OverdueBookIssueRead,
     PaginationMeta,
 )
 
@@ -63,6 +64,35 @@ async def list_book_issues(
         data=[BookIssueRead.model_validate(i) for i in issues],
         meta=PaginationMeta(page=page, page_size=page_size, total=total),
     )
+
+
+@router.get("/issues/overdue", response_model=list[OverdueBookIssueRead])
+async def list_overdue_issues(
+    current_user: CurrentUser = Depends(require_permission("library:issue:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> list[OverdueBookIssueRead]:
+    today = date.today()
+    stmt = (
+        select(BookIssue, Book.title, Book.fine_per_day)
+        .join(Book, Book.id == BookIssue.book_id)
+        .where(
+            BookIssue.tenant_id == current_user.tenant_id,
+            BookIssue.deleted_at.is_(None),
+            BookIssue.status == BookIssueStatus.issued,
+            BookIssue.due_date < today,
+        )
+        .order_by(BookIssue.due_date)
+    )
+    rows = (await db.execute(stmt)).all()
+    return [
+        OverdueBookIssueRead(
+            **BookIssueRead.model_validate(issue).model_dump(),
+            book_title=book_title,
+            days_overdue=(today - issue.due_date).days,
+            projected_fine=fine_per_day * (today - issue.due_date).days,
+        )
+        for issue, book_title, fine_per_day in rows
+    ]
 
 
 async def _get_book_or_404(book_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession) -> Book:
@@ -136,10 +166,32 @@ async def return_book_issue(
     issue = await _get_book_issue_or_404(issue_id, current_user.tenant_id, db)
     book = await _get_book_or_404(issue.book_id, current_user.tenant_id, db)
 
-    issue.returned_date = date.today()
+    today = date.today()
+    issue.returned_date = today
     issue.status = BookIssueStatus.returned
+    if today > issue.due_date:
+        issue.fine_amount = book.fine_per_day * (today - issue.due_date).days
     book.available_copies += 1
 
+    await db.flush()
+    response = BookIssueRead.model_validate(issue)
+    await db.commit()
+    return response
+
+
+@router.post("/issues/{issue_id}/pay-fine", response_model=BookIssueRead)
+async def pay_book_issue_fine(
+    issue_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("library:issue:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> BookIssueRead:
+    issue = await _get_book_issue_or_404(issue_id, current_user.tenant_id, db)
+    if issue.fine_amount is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": {"code": "no_fine", "message": "This issue has no outstanding fine"}},
+        )
+    issue.fine_paid = True
     await db.flush()
     response = BookIssueRead.model_validate(issue)
     await db.commit()

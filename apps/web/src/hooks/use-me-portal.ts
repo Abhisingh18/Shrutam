@@ -1,6 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { MyAttendance, MyChildren, MyInvoices, MyResults } from "@/types/me";
+import { downloadPdf } from "@/lib/pdf-download";
+import type { Payment } from "@/types/finance";
+import type {
+  HostelComplaint,
+  HostelComplaintCreateInput,
+  MyAttendance,
+  MyChildren,
+  MyInvoices,
+  MyResults,
+} from "@/types/me";
 
 /**
  * Self-service hooks backing the student/parent portal (/app/me/*). Every
@@ -36,5 +45,62 @@ export function useMyResults(studentId?: string) {
     queryKey: ["me", "results", studentId],
     queryFn: () => apiFetch<MyResults>("/me/results", { params: { student_id: studentId } }),
     enabled: Boolean(studentId),
+  });
+}
+
+export function useMyInvoicePayments(invoiceId: string | undefined, studentId?: string) {
+  return useQuery({
+    queryKey: ["me", "invoice-payments", invoiceId, studentId],
+    queryFn: () =>
+      apiFetch<Payment[]>(`/me/invoices/${invoiceId}/payments`, {
+        params: { student_id: studentId },
+      }),
+    enabled: Boolean(invoiceId),
+  });
+}
+
+function withStudentParam(path: string, studentId?: string): string {
+  return studentId ? `${path}?student_id=${encodeURIComponent(studentId)}` : path;
+}
+
+export function downloadMyIdCard(studentId?: string): Promise<void> {
+  return downloadPdf(withStudentParam("/me/id-card.pdf", studentId), "id-card.pdf");
+}
+
+export function downloadMyReportCard(studentId?: string): Promise<void> {
+  return downloadPdf(withStudentParam("/me/report-card.pdf", studentId), "report-card.pdf");
+}
+
+export function downloadMyReceipt(
+  invoiceId: string,
+  paymentId: string,
+  invoiceNumber: string,
+  studentId?: string,
+): Promise<void> {
+  return downloadPdf(
+    withStudentParam(`/me/invoices/${invoiceId}/payments/${paymentId}/receipt.pdf`, studentId),
+    `receipt-${invoiceNumber}.pdf`,
+  );
+}
+
+export function useMyHostelComplaints(studentId?: string) {
+  return useQuery({
+    queryKey: ["me", "hostel-complaints", studentId],
+    queryFn: () =>
+      apiFetch<HostelComplaint[]>("/me/hostel-complaints", { params: { student_id: studentId } }),
+    enabled: Boolean(studentId),
+  });
+}
+
+export function useRaiseHostelComplaint(studentId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: HostelComplaintCreateInput) =>
+      apiFetch<HostelComplaint>("/me/hostel-complaints", {
+        method: "POST",
+        body: input,
+        params: { student_id: studentId },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me", "hostel-complaints", studentId] }),
   });
 }

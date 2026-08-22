@@ -1,11 +1,14 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_tenant_db
+from app.core.institution import get_institution_name
+from app.core.pdf import render_id_card, render_transfer_certificate
 from app.core.permissions import CurrentUser, require_permission
 from app.models.student import Student
 from app.schemas.student import (
@@ -116,3 +119,65 @@ async def delete_student(
     student = await _get_student_or_404(student_id, current_user.tenant_id, db)
     student.deleted_at = datetime.now(timezone.utc)
     await db.commit()
+
+
+@router.get("/{student_id}/id-card.pdf")
+async def download_student_id_card(
+    student_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("students:profile:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> Response:
+    student = await _get_student_or_404(student_id, current_user.tenant_id, db)
+    institution_name = await get_institution_name(current_user.tenant_id, db)
+    pdf_bytes = render_id_card(
+        institution_name=institution_name,
+        student_name=student.full_name,
+        admission_number=student.admission_number,
+        status=student.status.value,
+        date_of_birth=student.date_of_birth,
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="id-card-{student.admission_number}.pdf"'
+        },
+    )
+
+
+class TransferCertificateRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+    conduct: str = Field(default="Good", max_length=100)
+
+
+@router.post("/{student_id}/transfer-certificate.pdf")
+async def download_transfer_certificate(
+    student_id: uuid.UUID,
+    body: TransferCertificateRequest,
+    current_user: CurrentUser = Depends(require_permission("students:profile:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> Response:
+    student = await _get_student_or_404(student_id, current_user.tenant_id, db)
+    institution_name = await get_institution_name(current_user.tenant_id, db)
+    admission_display = (
+        student.created_at.strftime("%d %B %Y") if student.created_at else "Not on record"
+    )
+    pdf_bytes = render_transfer_certificate(
+        institution_name=institution_name,
+        student_name=student.full_name,
+        admission_number=student.admission_number,
+        date_of_birth=student.date_of_birth,
+        admission_date_display=admission_display,
+        issue_date=date.today(),
+        reason=body.reason,
+        conduct=body.conduct,
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="transfer-certificate-{student.admission_number}.pdf"'
+            )
+        },
+    )

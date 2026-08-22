@@ -64,3 +64,21 @@ export interface PaymentCreateInput {
   method: Payment["method"];
   reference_number?: string;
 }
+
+export interface InvoiceDefaulter {
+  invoice_id: string;
+  invoice_number: string;
+  student_id: string;
+  student_name: string;
+  amount: string;
+  total_paid: string;
+  outstanding: string;
+  due_date: string;
+  days_overdue: number;
+  late_fee: string;
+}
+
+export interface InvoiceDefaultersResponse {
+  data: InvoiceDefaulter[];
+  total_outstanding: string;
+}

@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import type {
   AttendanceBulkMarkInput,
+  AttendanceDefaultersResponse,
   AttendanceListResponse,
   AttendanceRecord,
+  AttendanceSummary,
 } from "@/types/attendance";
 
 const attendanceHistoryKey = (params?: Record<string, unknown>) =>
@@ -52,6 +54,23 @@ export function useMarkAttendance() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["attendance", "history"] });
       qc.invalidateQueries({ queryKey: attendanceForDateKey(variables.attendance_date) });
+      qc.invalidateQueries({ queryKey: ["attendance", "defaulters"] });
     },
+  });
+}
+
+export function useAttendanceSummary(studentId: string | undefined) {
+  return useQuery({
+    queryKey: ["attendance", "summary", studentId],
+    queryFn: () => apiFetch<AttendanceSummary>(`/attendance/summary/${studentId}`),
+    enabled: Boolean(studentId),
+  });
+}
+
+export function useAttendanceDefaulters(threshold: number = 75) {
+  return useQuery({
+    queryKey: ["attendance", "defaulters", threshold],
+    queryFn: () =>
+      apiFetch<AttendanceDefaultersResponse>("/attendance/defaulters", { params: { threshold } }),
   });
 }

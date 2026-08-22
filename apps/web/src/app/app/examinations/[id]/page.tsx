@@ -3,11 +3,13 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { Download, Pencil, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { RequirePermission } from "@/components/auth/require-permission";
 import { DetailPageTemplate } from "@/components/templates/detail-page-template";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GradeBadge } from "@/components/widgets/grade-badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -18,7 +20,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useExam, useExamMarks, usePublishExam, useUpdateExamMarks } from "@/hooks/use-exams";
+import {
+  downloadExamReportCard,
+  useExam,
+  useExamAnalytics,
+  useExamMarks,
+  useExamRankList,
+  usePublishExam,
+  useUpdateExamMarks,
+} from "@/hooks/use-exams";
 import { useStudents } from "@/hooks/use-students";
 import { ApiError } from "@/lib/api-client";
 import type { ExamMarkEntry } from "@/types/examination";
@@ -165,6 +175,121 @@ function MarksTab({ examId }: { examId: string }) {
   );
 }
 
+function RankListTab({ examId }: { examId: string }) {
+  const { data: rankList, isLoading: rankLoading } = useExamRankList(examId);
+  const { data: analytics, isLoading: analyticsLoading } = useExamAnalytics(examId);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async (studentId: string, studentName: string) => {
+    setDownloadingId(studentId);
+    try {
+      await downloadExamReportCard(studentId, studentName.replace(/\s+/g, "-").toLowerCase());
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to download report card");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  if (rankLoading || analyticsLoading) return <Skeleton className="h-64 w-full" />;
+
+  return (
+    <div className="space-y-6">
+      {analytics && analytics.students_graded > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Average</div>
+            <div className="text-xl font-bold text-foreground tabular-nums mt-1">
+              {analytics.average_marks}
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Highest</div>
+            <div className="text-xl font-bold text-success tabular-nums mt-1">
+              {analytics.highest_marks}
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Lowest</div>
+            <div className="text-xl font-bold text-destructive tabular-nums mt-1">
+              {analytics.lowest_marks}
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="text-xs text-muted-foreground">Pass rate</div>
+            <div className="text-xl font-bold text-foreground tabular-nums mt-1">
+              {analytics.pass_percentage}%
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {analytics.pass_count} passed · {analytics.fail_count} failed
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(!rankList || rankList.data.length === 0) && (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          No marks entered yet — enter marks in the Marks tab to see rankings.
+        </p>
+      )}
+
+      {rankList && rankList.data.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">Rank</TableHead>
+              <TableHead>Student</TableHead>
+              <TableHead>Marks</TableHead>
+              <TableHead>Percentage</TableHead>
+              <TableHead>Grade</TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rankList.data.map((entry) => (
+              <TableRow key={entry.student_id}>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={
+                      entry.rank === 1
+                        ? "bg-warning-bg text-warning border-transparent"
+                        : "border-transparent bg-muted"
+                    }
+                  >
+                    {entry.rank === 1 && <Trophy className="size-3 mr-1" />}#{entry.rank}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium text-foreground">{entry.student_name}</TableCell>
+                <TableCell className="tabular-nums">
+                  {entry.marks_obtained} / {rankList.max_marks}
+                </TableCell>
+                <TableCell className="tabular-nums text-muted-foreground">
+                  {entry.percentage}%
+                </TableCell>
+                <TableCell>
+                  <GradeBadge grade={entry.grade} size="sm" />
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={downloadingId === entry.student_id}
+                    onClick={() => handleDownload(entry.student_id, entry.student_name)}
+                    aria-label={`Download report card for ${entry.student_name}`}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  );
+}
+
 function ExaminationDetailPage({ id }: { id: string }) {
   const router = useRouter();
   const { data: exam } = useExam(id);
@@ -191,6 +316,7 @@ function ExaminationDetailPage({ id }: { id: string }) {
       tabs={[
         { value: "overview", label: "Overview", content: <OverviewTab examId={id} /> },
         { value: "marks", label: "Marks", content: <MarksTab examId={id} /> },
+        { value: "rank-list", label: "Rank List", content: <RankListTab examId={id} /> },
       ]}
       rightRail={
         <div className="space-y-4">

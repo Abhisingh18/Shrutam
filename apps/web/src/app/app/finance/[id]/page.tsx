@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { RequirePermission } from "@/components/auth/require-permission";
 import { DetailPageTemplate } from "@/components/templates/detail-page-template";
@@ -24,7 +25,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useInvoice, useInvoicePayments, useRecordPayment } from "@/hooks/use-invoices";
+import {
+  downloadPaymentReceipt,
+  useInvoice,
+  useInvoicePayments,
+  useRecordPayment,
+} from "@/hooks/use-invoices";
 import { ApiError } from "@/lib/api-client";
 import type { Payment } from "@/types/finance";
 
@@ -62,13 +68,25 @@ function OverviewTab({ invoiceId }: { invoiceId: string }) {
   );
 }
 
-function PaymentsTab({ invoiceId }: { invoiceId: string }) {
+function PaymentsTab({ invoiceId, invoiceNumber }: { invoiceId: string; invoiceNumber: string }) {
   const { data: payments, isLoading } = useInvoicePayments(invoiceId);
   const recordPayment = useRecordPayment(invoiceId);
 
   const [amount, setAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [method, setMethod] = useState<Payment["method"]>("cash");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadReceipt = async (paymentId: string) => {
+    setDownloadingId(paymentId);
+    try {
+      await downloadPaymentReceipt(invoiceId, paymentId, invoiceNumber);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to download receipt");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handleRecord = async () => {
     if (!amount) return;
@@ -136,19 +154,20 @@ function PaymentsTab({ invoiceId }: { invoiceId: string }) {
             <TableHead>Amount</TableHead>
             <TableHead>Method</TableHead>
             <TableHead>Reference</TableHead>
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading && (
             <TableRow>
-              <TableCell colSpan={4}>
+              <TableCell colSpan={5}>
                 <Skeleton className="h-4 w-full" />
               </TableCell>
             </TableRow>
           )}
           {!isLoading && payments?.length === 0 && (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                 No payments recorded yet.
               </TableCell>
             </TableRow>
@@ -159,6 +178,17 @@ function PaymentsTab({ invoiceId }: { invoiceId: string }) {
               <TableCell className="font-medium text-foreground tabular-nums">₹{p.amount}</TableCell>
               <TableCell className="capitalize">{p.method.replace("_", " ")}</TableCell>
               <TableCell className="text-muted-foreground">{p.reference_number ?? "—"}</TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={downloadingId === p.id}
+                  onClick={() => handleDownloadReceipt(p.id)}
+                  aria-label="Download receipt"
+                >
+                  <Download className="size-4" />
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -182,7 +212,11 @@ function InvoiceDetailPage({ id }: { id: string }) {
       }
       tabs={[
         { value: "overview", label: "Overview", content: <OverviewTab invoiceId={id} /> },
-        { value: "payments", label: "Payments", content: <PaymentsTab invoiceId={id} /> },
+        {
+          value: "payments",
+          label: "Payments",
+          content: <PaymentsTab invoiceId={id} invoiceNumber={invoice?.invoice_number ?? ""} />,
+        },
       ]}
       rightRail={
         <div className="space-y-4">

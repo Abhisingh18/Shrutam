@@ -7,7 +7,7 @@ from app.models.documents import Document
 from app.models.examination import Exam, ExamMark
 from app.models.faculty import Faculty
 from app.models.finance import FeeStructure, Invoice, Payment
-from app.models.hostel import Hostel, Room, RoomAllocation
+from app.models.hostel import Hostel, HostelComplaint, Room, RoomAllocation
 from app.models.hr import Employee, LeaveRequest
 from app.models.library import Book, BookIssue
 from app.models.notification import Notification
@@ -50,6 +50,7 @@ __all__ = [
     "Hostel",
     "Room",
     "RoomAllocation",
+    "HostelComplaint",
     "Vehicle",
     "Route",
     "TransportPass",

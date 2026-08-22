@@ -1,30 +1,65 @@
 "use client";
 
 import { useState } from "react";
-import { FileCheck2 } from "lucide-react";
+import { CreditCard, Download, FileCheck2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChildSelector } from "@/components/me/child-selector";
 import { CircularProgress } from "@/components/widgets/circular-progress";
 import { GradeBadge } from "@/components/widgets/grade-badge";
-import { useMyResults } from "@/hooks/use-me-portal";
+import { downloadMyIdCard, downloadMyReportCard, useMyResults } from "@/hooks/use-me-portal";
+import { ApiError } from "@/lib/api-client";
 
 export default function MyResultsPage() {
   const [studentId, setStudentId] = useState<string | undefined>();
   const { data, isLoading } = useMyResults(studentId);
+  const [downloading, setDownloading] = useState<"id-card" | "report-card" | null>(null);
 
   const cgpa = data?.cgpa.cgpa;
   const tone = cgpa === null || cgpa === undefined ? "primary" : cgpa >= 8 ? "success" : cgpa >= 6 ? "warning" : "destructive";
 
+  const handleDownload = async (kind: "id-card" | "report-card") => {
+    setDownloading(kind);
+    try {
+      await (kind === "id-card" ? downloadMyIdCard(studentId) : downloadMyReportCard(studentId));
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : `Failed to download ${kind.replace("-", " ")}`);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   return (
     <div className="p-6 space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">My Results</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Only published results appear here — nothing shows before your institution
-          publishes it.
-        </p>
-        <div className="mt-3">
-          <ChildSelector selectedId={studentId} onSelect={setStudentId} />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">My Results</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Only published results appear here — nothing shows before your institution
+            publishes it.
+          </p>
+          <div className="mt-3">
+            <ChildSelector selectedId={studentId} onSelect={setStudentId} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!studentId || downloading !== null}
+            onClick={() => handleDownload("id-card")}
+          >
+            <CreditCard className="size-4" /> ID card
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!studentId || downloading !== null}
+            onClick={() => handleDownload("report-card")}
+          >
+            <Download className="size-4" /> Report card
+          </Button>
         </div>
       </div>
 

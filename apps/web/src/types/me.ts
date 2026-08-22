@@ -27,3 +27,5 @@ export interface MyResults {
   results: MyExamResult[];
   cgpa: MyCGPA;
 }
+
+export type { HostelComplaint, HostelComplaintCreateInput } from "@/types/hostel-complaint";

@@ -1,11 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { SectionListResponse } from "@/types/academics";
+import type {
+  Section,
+  SectionCreateInput,
+  SectionListResponse,
+  SectionUpdateInput,
+} from "@/types/academics";
 
 const sectionsKey = (params?: Record<string, unknown>) => ["sections", params] as const;
 
-// No single-section GET exists on the backend (app/api/v1/academics.py only
-// exposes list + create for sections) — list-only, per use-departments.ts conventions.
 export function useSections(params: {
   page: number;
   pageSize: number;
@@ -24,5 +27,34 @@ export function useSections(params: {
         },
       }),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useSection(id: string | undefined) {
+  return useQuery({
+    queryKey: ["sections", "detail", id],
+    queryFn: () => apiFetch<Section>(`/academics/sections/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SectionCreateInput) =>
+      apiFetch<Section>("/academics/sections", { method: "POST", body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sections"] }),
+  });
+}
+
+export function useUpdateSection(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SectionUpdateInput) =>
+      apiFetch<Section>(`/academics/sections/${id}`, { method: "PATCH", body: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sections"] });
+      qc.invalidateQueries({ queryKey: ["sections", "detail", id] });
+    },
   });
 }

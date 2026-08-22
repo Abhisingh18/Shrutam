@@ -88,6 +88,7 @@ export interface Section {
   program_id: string;
   semester_id: string;
   capacity: number;
+  class_teacher_id: string | null;
 }
 
 export interface SectionListResponse {
@@ -100,4 +101,9 @@ export interface SectionCreateInput {
   program_id: string;
   semester_id: string;
   capacity: number;
+  class_teacher_id?: string | null;
 }
+
+export type SectionUpdateInput = Partial<
+  Pick<SectionCreateInput, "name" | "capacity" | "class_teacher_id">
+>;

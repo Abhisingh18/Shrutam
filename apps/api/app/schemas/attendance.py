@@ -37,3 +37,26 @@ class PaginationMeta(BaseModel):
 class AttendanceListResponse(BaseModel):
     data: list[AttendanceRecordRead]
     meta: PaginationMeta
+
+
+class AttendanceSummaryResponse(BaseModel):
+    student_id: uuid.UUID
+    total_days: int
+    present_days: int
+    absent_days: int
+    late_days: int
+    excused_days: int
+    attendance_percentage: float | None
+
+
+class AttendanceDefaulterRead(BaseModel):
+    student_id: uuid.UUID
+    student_name: str
+    total_days: int
+    present_days: int
+    attendance_percentage: float
+
+
+class AttendanceDefaultersResponse(BaseModel):
+    threshold: float
+    data: list[AttendanceDefaulterRead]

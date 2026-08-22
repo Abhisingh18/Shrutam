@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { RequirePermission } from "@/components/auth/require-permission";
 import {
@@ -11,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +28,11 @@ import {
 // this page needs pagination/virtualization (and likely a section/class filter)
 // rather than one flat table.
 import { useStudents } from "@/hooks/use-students";
-import { useAttendanceForDate, useMarkAttendance } from "@/hooks/use-attendance";
+import {
+  useAttendanceDefaulters,
+  useAttendanceForDate,
+  useMarkAttendance,
+} from "@/hooks/use-attendance";
 import { ApiError } from "@/lib/api-client";
 import type { AttendanceStatus } from "@/types/attendance";
 
@@ -39,6 +45,67 @@ const STATUS_OPTIONS: { value: AttendanceStatus; label: string }[] = [
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function DefaultersPanel() {
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useAttendanceDefaulters(75);
+  const count = data?.data.length ?? 0;
+
+  return (
+    <div className="border-b border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-6 py-3 text-sm hover:bg-muted/40 transition-colors"
+      >
+        <span className="flex items-center gap-2 font-medium text-foreground">
+          <AlertTriangle className="size-4 text-warning" />
+          Below 75% attendance
+          {!isLoading && (
+            <Badge variant="outline" className="bg-warning-bg text-warning border-transparent">
+              {count}
+            </Badge>
+          )}
+        </span>
+        {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+      </button>
+      {open && (
+        <div className="px-6 pb-4">
+          {isLoading && <Skeleton className="h-20 w-full" />}
+          {!isLoading && count === 0 && (
+            <p className="text-sm text-muted-foreground py-4">
+              No students below the 75% attendance threshold.
+            </p>
+          )}
+          {!isLoading && count > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Present / Total</TableHead>
+                  <TableHead>Attendance %</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.data.map((d) => (
+                  <TableRow key={d.student_id}>
+                    <TableCell className="font-medium text-foreground">{d.student_name}</TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">
+                      {d.present_days} / {d.total_days}
+                    </TableCell>
+                    <TableCell className="tabular-nums font-semibold text-destructive">
+                      {d.attendance_percentage}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function MarkAttendancePage() {
@@ -120,6 +187,8 @@ function MarkAttendancePage() {
           </Button>
         </div>
       </div>
+
+      <DefaultersPanel />
 
       <div className="flex-1 overflow-auto px-6 py-4 pb-24">
         <Table>

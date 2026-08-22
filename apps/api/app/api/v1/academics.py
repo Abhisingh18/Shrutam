@@ -24,6 +24,7 @@ from app.schemas.academics import (
     SectionCreate,
     SectionListResponse,
     SectionRead,
+    SectionUpdate,
     SemesterCreate,
     SemesterListResponse,
     SemesterRead,
@@ -435,3 +436,55 @@ async def create_section(
     response = SectionRead.model_validate(section)
     await db.commit()
     return response
+
+
+async def _get_section_or_404(
+    section_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> Section:
+    stmt = select(Section).where(
+        Section.id == section_id, Section.tenant_id == tenant_id, Section.deleted_at.is_(None)
+    )
+    section = (await db.execute(stmt)).scalar_one_or_none()
+    if section is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Section not found"}},
+        )
+    return section
+
+
+@router.get("/sections/{section_id}", response_model=SectionRead)
+async def get_section(
+    section_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> SectionRead:
+    section = await _get_section_or_404(section_id, current_user.tenant_id, db)
+    return SectionRead.model_validate(section)
+
+
+@router.patch("/sections/{section_id}", response_model=SectionRead)
+async def update_section(
+    section_id: uuid.UUID,
+    body: SectionUpdate,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> SectionRead:
+    section = await _get_section_or_404(section_id, current_user.tenant_id, db)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(section, field, value)
+    await db.flush()
+    response = SectionRead.model_validate(section)
+    await db.commit()
+    return response
+
+
+@router.delete("/sections/{section_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_section(
+    section_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:delete")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> None:
+    section = await _get_section_or_404(section_id, current_user.tenant_id, db)
+    section.deleted_at = datetime.now(timezone.utc)
+    await db.commit()

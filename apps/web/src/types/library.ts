@@ -31,6 +31,8 @@ export interface BookIssue {
   due_date: string;
   returned_date: string | null;
   status: "issued" | "returned" | "overdue";
+  fine_amount: string | null;
+  fine_paid: boolean;
 }
 
 export interface BookIssueListResponse {
@@ -42,4 +44,10 @@ export interface BookIssueCreateInput {
   book_id: string;
   student_id: string;
   due_date: string;
+}
+
+export interface OverdueBookIssue extends BookIssue {
+  book_title: string;
+  days_overdue: number;
+  projected_fine: string;
 }

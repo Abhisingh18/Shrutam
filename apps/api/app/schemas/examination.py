@@ -75,3 +75,40 @@ class StudentCGPAResponse(BaseModel):
     cgpa: float | None
     scale: str = "10-point"
     exams_graded: int
+
+
+class ExamRankEntry(BaseModel):
+    rank: int
+    student_id: uuid.UUID
+    student_name: str
+    marks_obtained: float
+    percentage: float
+    grade: str | None = None
+
+
+class ExamRankListResponse(BaseModel):
+    exam_id: uuid.UUID
+    max_marks: int
+    data: list[ExamRankEntry]
+
+
+class ExamAnalyticsResponse(BaseModel):
+    exam_id: uuid.UUID
+    students_graded: int
+    average_marks: float | None
+    highest_marks: float | None
+    lowest_marks: float | None
+    pass_count: int
+    fail_count: int
+    pass_percentage: float | None
+    grade_distribution: dict[str, int]
+
+
+class ReportCardResult(BaseModel):
+    exam_id: uuid.UUID
+    exam_name: str
+    exam_type: str
+    max_marks: int
+    marks_obtained: float | None
+    grade: str | None
+    grade_point: float | None

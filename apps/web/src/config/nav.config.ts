@@ -76,6 +76,7 @@ export const SELF_SERVICE_NAV_ITEMS: NavItem[] = [
   { label: "My Attendance", href: "/app/me/attendance", icon: CalendarCheck, description: "Your attendance history.", requiredPermission: null, phase: 1, implemented: true },
   { label: "My Fees", href: "/app/me/fees", icon: Wallet, description: "Invoices and payment status.", requiredPermission: null, phase: 1, implemented: true },
   { label: "My Results", href: "/app/me/results", icon: FileCheck2, description: "Published exam results and CGPA.", requiredPermission: null, phase: 1, implemented: true },
+  { label: "My Hostel", href: "/app/me/hostel", icon: Building2, description: "Raise and track room maintenance complaints.", requiredPermission: null, phase: 2, implemented: true },
 ];
 
 // Super-admin-only platform console — docs/02-information-architecture.md §6.

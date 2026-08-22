@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,6 +11,7 @@ class BookBase(BaseModel):
     isbn: str | None = None
     total_copies: int = Field(ge=0)
     category: str | None = None
+    fine_per_day: Decimal = Field(default=Decimal("5"), ge=0)
 
 
 class BookCreate(BookBase):
@@ -23,6 +25,7 @@ class BookUpdate(BaseModel):
     total_copies: int | None = Field(default=None, ge=0)
     available_copies: int | None = Field(default=None, ge=0)
     category: str | None = None
+    fine_per_day: Decimal | None = Field(default=None, ge=0)
 
 
 class BookRead(BookBase):
@@ -59,8 +62,16 @@ class BookIssueRead(BaseModel):
     due_date: date
     returned_date: date | None = None
     status: str
+    fine_amount: Decimal | None = None
+    fine_paid: bool = False
 
 
 class BookIssueListResponse(BaseModel):
     data: list[BookIssueRead]
     meta: PaginationMeta
+
+
+class OverdueBookIssueRead(BookIssueRead):
+    book_title: str
+    days_overdue: int
+    projected_fine: Decimal

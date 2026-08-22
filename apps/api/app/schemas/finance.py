@@ -18,6 +18,7 @@ class FeeStructureBase(BaseModel):
         default="one_time", pattern="^(one_time|monthly|quarterly|annual)$"
     )
     academic_year_id: uuid.UUID | None = None
+    late_fee_per_day: Decimal = Field(default=Decimal("0"), ge=0)
 
 
 class FeeStructureCreate(FeeStructureBase):
@@ -83,3 +84,21 @@ class PaymentRead(BaseModel):
     payment_date: date
     method: str
     reference_number: str | None = None
+
+
+class InvoiceDefaulterRead(BaseModel):
+    invoice_id: uuid.UUID
+    invoice_number: str
+    student_id: uuid.UUID
+    student_name: str
+    amount: Decimal
+    total_paid: Decimal
+    outstanding: Decimal
+    due_date: date
+    days_overdue: int
+    late_fee: Decimal
+
+
+class InvoiceDefaultersResponse(BaseModel):
+    data: list[InvoiceDefaulterRead]
+    total_outstanding: Decimal

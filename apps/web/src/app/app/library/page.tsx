@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, MoreHorizontal } from "lucide-react";
 import { RequirePermission } from "@/components/auth/require-permission";
 import { ListPageTemplate } from "@/components/templates/list-page-template";
 import {
@@ -23,6 +23,68 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useBooks } from "@/hooks/use-books";
+import { useOverdueBookIssues } from "@/hooks/use-book-issues";
+
+function OverduePanel() {
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useOverdueBookIssues();
+  const count = data?.length ?? 0;
+
+  return (
+    <div className="rounded-lg border border-border mb-4 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/40 transition-colors"
+      >
+        <span className="flex items-center gap-2 font-medium text-foreground">
+          <AlertTriangle className="size-4 text-destructive" />
+          Overdue books
+          {!isLoading && (
+            <Badge variant="outline" className="bg-destructive-bg text-destructive border-transparent">
+              {count}
+            </Badge>
+          )}
+        </span>
+        {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 border-t border-border pt-3">
+          {isLoading && <Skeleton className="h-20 w-full" />}
+          {!isLoading && count === 0 && (
+            <p className="text-sm text-muted-foreground py-2">No overdue books right now.</p>
+          )}
+          {!isLoading && count > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Book</TableHead>
+                  <TableHead>Due date</TableHead>
+                  <TableHead>Days overdue</TableHead>
+                  <TableHead>Projected fine</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data?.map((issue) => (
+                  <TableRow key={issue.id}>
+                    <TableCell className="font-medium text-foreground">{issue.book_title}</TableCell>
+                    <TableCell className="text-muted-foreground">{issue.due_date}</TableCell>
+                    <TableCell className="tabular-nums text-destructive font-semibold">
+                      {issue.days_overdue}
+                    </TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">
+                      ₹{issue.projected_fine}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function BooksListPage() {
   const router = useRouter();
@@ -50,6 +112,7 @@ function BooksListPage() {
       total={data?.meta.total ?? 0}
       onPageChange={setPage}
     >
+      <OverduePanel />
       <Table>
         <TableHeader>
           <TableRow>

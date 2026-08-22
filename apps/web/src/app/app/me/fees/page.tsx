@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Clock, AlertTriangle, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, Clock, AlertTriangle, Download, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChildSelector } from "@/components/me/child-selector";
-import { useMyInvoices } from "@/hooks/use-me-portal";
+import { downloadMyReceipt, useMyInvoicePayments, useMyInvoices } from "@/hooks/use-me-portal";
+import { ApiError } from "@/lib/api-client";
 import type { Invoice } from "@/types/finance";
 
 const STATUS_CONFIG: Record<
@@ -18,9 +21,63 @@ const STATUS_CONFIG: Record<
   cancelled: { label: "Cancelled", icon: XCircle, className: "bg-muted text-muted-foreground" },
 };
 
+function PaymentsRow({
+  invoice,
+  studentId,
+}: {
+  invoice: Invoice;
+  studentId: string | undefined;
+}) {
+  const { data: payments, isLoading } = useMyInvoicePayments(invoice.id, studentId);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async (paymentId: string) => {
+    setDownloadingId(paymentId);
+    try {
+      await downloadMyReceipt(invoice.id, paymentId, invoice.invoice_number, studentId);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to download receipt");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  if (isLoading) return <Skeleton className="h-10 w-full" />;
+  if (!payments || payments.length === 0) {
+    return <p className="text-xs text-muted-foreground py-2">No payments recorded yet.</p>;
+  }
+
+  return (
+    <div className="space-y-1.5 py-1">
+      {payments.map((p) => (
+        <div
+          key={p.id}
+          className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2 text-xs"
+        >
+          <span className="text-foreground font-medium tabular-nums">
+            ₹{parseFloat(p.amount).toLocaleString("en-IN")}
+          </span>
+          <span className="text-muted-foreground">{p.payment_date}</span>
+          <span className="text-muted-foreground capitalize">{p.method.replace("_", " ")}</span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={downloadingId === p.id}
+            onClick={() => handleDownload(p.id)}
+            aria-label="Download receipt"
+          >
+            <Download className="size-3.5" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function MyFeesPage() {
   const [studentId, setStudentId] = useState<string | undefined>();
   const { data: invoices, isLoading } = useMyInvoices(studentId);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const outstanding = invoices?.filter((i) => i.status !== "paid" && i.status !== "cancelled") ?? [];
   const outstandingTotal = outstanding.reduce((sum, i) => sum + parseFloat(i.amount), 0);
@@ -72,32 +129,51 @@ export default function MyFeesPage() {
           {invoices?.map((invoice) => {
             const config = STATUS_CONFIG[invoice.status];
             const Icon = config.icon;
+            const expanded = expandedId === invoice.id;
             return (
-              <div
-                key={invoice.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`inline-flex items-center justify-center size-9 rounded-lg shrink-0 ${config.className}`}>
-                    <Icon className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-medium text-foreground font-mono text-sm">
-                      {invoice.invoice_number}
+              <div key={invoice.id} className="rounded-lg border border-border bg-card overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(expanded ? null : invoice.id)}
+                  className="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`inline-flex items-center justify-center size-9 rounded-lg shrink-0 ${config.className}`}>
+                      <Icon className="size-5" />
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Due {invoice.due_date}
+                    <div className="min-w-0">
+                      <div className="font-medium text-foreground font-mono text-sm">
+                        {invoice.invoice_number}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Due {invoice.due_date}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-semibold text-foreground tabular-nums">
-                    ₹{parseFloat(invoice.amount).toLocaleString("en-IN")}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <div className="font-semibold text-foreground tabular-nums">
+                        ₹{parseFloat(invoice.amount).toLocaleString("en-IN")}
+                      </div>
+                      <div className={`text-xs font-medium mt-0.5 ${config.className.split(" ")[1]}`}>
+                        {config.label}
+                      </div>
+                    </div>
+                    {expanded ? (
+                      <ChevronUp className="size-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="size-4 text-muted-foreground" />
+                    )}
                   </div>
-                  <div className={`text-xs font-medium mt-0.5 ${config.className.split(" ")[1]}`}>
-                    {config.label}
+                </button>
+                {expanded && (
+                  <div className="px-4 pb-3 border-t border-border">
+                    <div className="text-xs font-medium text-muted-foreground pt-2 pb-1">
+                      Payments
+                    </div>
+                    <PaymentsRow invoice={invoice} studentId={studentId} />
                   </div>
-                </div>
+                )}
               </div>
             );
           })}

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, Enum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +21,7 @@ class Book(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin, Base):
     total_copies: Mapped[int] = mapped_column(Integer, nullable=False)
     available_copies: Mapped[int] = mapped_column(Integer, nullable=False)
     category: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    fine_per_day: Mapped[Numeric] = mapped_column(Numeric(8, 2), default=5, nullable=False)
 
 
 class BookIssueStatus(str, enum.Enum):
@@ -46,3 +47,7 @@ class BookIssue(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin, Base):
         default=BookIssueStatus.issued,
         nullable=False,
     )
+    # Computed at return time as days-overdue * Book.fine_per_day — null while
+    # still issued or if returned on/before the due date.
+    fine_amount: Mapped[Numeric | None] = mapped_column(Numeric(8, 2), nullable=True)
+    fine_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

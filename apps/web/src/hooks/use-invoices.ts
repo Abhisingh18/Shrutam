@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
+import { downloadPdf } from "@/lib/pdf-download";
 import type {
   Invoice,
   InvoiceCreateInput,
+  InvoiceDefaultersResponse,
   InvoiceListResponse,
   InvoiceUpdateInput,
   Payment,
@@ -73,6 +75,25 @@ export function useRecordPayment(invoiceId: string) {
       qc.invalidateQueries({ queryKey: ["invoices", "payments", invoiceId] });
       qc.invalidateQueries({ queryKey: ["invoices", "detail", invoiceId] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoices", "defaulters"] });
     },
   });
+}
+
+export function useInvoiceDefaulters() {
+  return useQuery({
+    queryKey: ["invoices", "defaulters"],
+    queryFn: () => apiFetch<InvoiceDefaultersResponse>("/finance/invoices/defaulters"),
+  });
+}
+
+export function downloadPaymentReceipt(
+  invoiceId: string,
+  paymentId: string,
+  invoiceNumber: string,
+): Promise<void> {
+  return downloadPdf(
+    `/finance/invoices/${invoiceId}/payments/${paymentId}/receipt.pdf`,
+    `receipt-${invoiceNumber}.pdf`,
+  );
 }

@@ -167,10 +167,17 @@ class SectionBase(BaseModel):
     program_id: uuid.UUID
     semester_id: uuid.UUID
     capacity: int = Field(ge=0)
+    class_teacher_id: uuid.UUID | None = None
 
 
 class SectionCreate(SectionBase):
     pass
+
+
+class SectionUpdate(BaseModel):
+    name: str | None = None
+    capacity: int | None = Field(default=None, ge=0)
+    class_teacher_id: uuid.UUID | None = None
 
 
 class SectionRead(SectionBase):

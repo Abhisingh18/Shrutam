@@ -87,6 +87,9 @@ class Section(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin, Base):
         UUID(as_uuid=True), ForeignKey("semesters.id"), nullable=False, index=True
     )
     capacity: Mapped[int] = mapped_column(nullable=False)
+    class_teacher_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("faculty.id"), nullable=True
+    )
 
     program: Mapped["Program"] = relationship(back_populates="sections")
     semester: Mapped["Semester"] = relationship(back_populates="sections")

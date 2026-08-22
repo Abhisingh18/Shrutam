@@ -112,6 +112,8 @@ MODULE_PERMISSIONS: dict[str, list[str]] = {
     "hostel:room:delete": ["institution_admin"],
     "hostel:allocation:read": ["institution_admin", "hostel_warden"],
     "hostel:allocation:write": ["institution_admin", "hostel_warden"],
+    "hostel:complaint:read": ["institution_admin", "hostel_warden"],
+    "hostel:complaint:write": ["institution_admin", "hostel_warden"],
 
     # Transport
     "transport:vehicle:read": ["institution_admin", "transport_manager"],
