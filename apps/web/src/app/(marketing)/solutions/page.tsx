@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/marketing/reveal";
 
 export const metadata: Metadata = {
   title: "Solutions",
@@ -130,11 +131,11 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20">
         <div className="grid lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-4 animate-in fade-in slide-in-from-bottom-3 fill-mode-both duration-500">
+          <Reveal className="lg:col-span-4" direction="left">
             <div className={`inline-flex items-center justify-center size-14 rounded-2xl mb-6 ${solution.iconBox}`}>
               <Icon className="size-7" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-balance">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-foreground text-balance">
               {solution.name}
             </h2>
             <p className="mt-3 text-muted-foreground leading-relaxed">{solution.summary}</p>
@@ -143,24 +144,22 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
                 See it for {solution.name.toLowerCase()} <ArrowRight className="size-4" />
               </Link>
             </Button>
-          </div>
+          </Reveal>
 
           <div className="lg:col-span-8 grid sm:grid-cols-2 gap-4">
             {solution.highlights.map((h, i) => (
-              <div
-                key={h}
-                className="group relative rounded-2xl border border-border bg-card p-5 overflow-hidden hover:border-foreground/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
-                style={{ animationDelay: `${100 + i * 80}ms`, animationDuration: "500ms" }}
-              >
-                <div
-                  className={`absolute -right-8 -top-8 size-24 rounded-full ${solution.glow} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity`}
-                  aria-hidden
-                />
-                <div className="relative flex items-start gap-3">
-                  <CheckCircle2 className={`size-4 shrink-0 mt-0.5 ${solution.iconText}`} />
-                  <span className="text-sm text-foreground leading-snug">{h}</span>
+              <Reveal key={h} delay={100 + i * 80}>
+                <div className="group relative h-full rounded-2xl border border-border bg-card p-5 overflow-hidden hover:border-foreground/20 hover:shadow-lg hover:shadow-foreground/5 hover:-translate-y-1 transition-all duration-300">
+                  <div
+                    className={`absolute -right-8 -top-8 size-24 rounded-full ${solution.glow} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity`}
+                    aria-hidden
+                  />
+                  <div className="relative flex items-start gap-3">
+                    <CheckCircle2 className={`size-4 shrink-0 mt-0.5 ${solution.iconText}`} />
+                    <span className="text-sm text-foreground leading-snug">{h}</span>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -190,7 +189,7 @@ export default function SolutionsPage() {
               <Layers className="size-3.5" />
               Five segments, one platform
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
               One platform,{" "}
               <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
                 configured for how you run
@@ -210,7 +209,7 @@ export default function SolutionsPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-foreground hover:border-primary/30 hover:text-primary transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-foreground hover:border-primary/30 hover:text-primary hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200"
               >
                 <s.icon className="size-3.5" />
                 {s.navLabel}
@@ -236,27 +235,27 @@ export default function SolutionsPage() {
           className="absolute -bottom-32 left-1/2 -translate-x-1/2 size-[36rem] rounded-full bg-accent/20 blur-3xl"
           aria-hidden
         />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-center">
-          <h2 className="text-3xl sm:text-4xl font-semibold text-balance">
+        <Reveal className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-center">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-balance">
             Ready to see Sutram configured for you?
           </h2>
           <p className="mt-3 text-primary-foreground/80 max-w-xl mx-auto text-lg">
             Tell us your segment and we&apos;ll show you the exact modules and dashboards you&apos;d get.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" variant="secondary" className="shadow-xl" asChild>
+            <Button size="lg" variant="secondary" className="shadow-xl hover:-translate-y-0.5 transition-transform" asChild>
               <Link href="/signup">Start free trial</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:-translate-y-0.5 transition-transform"
               asChild
             >
               <Link href="/demo">Request a demo</Link>
             </Button>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );

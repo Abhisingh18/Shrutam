@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductMockup } from "@/components/marketing/product-mockup";
+import { Reveal } from "@/components/marketing/reveal";
 
 const METRICS = [
   { value: "12", label: "core modules shipped" },
@@ -69,7 +70,7 @@ export default function HomePage() {
                 <Sparkles className="size-3.5" />
                 AI-native, not AI-bolted-on
               </span>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
                 The Education Operating System, built for the{" "}
                 <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
                   AI era
@@ -113,11 +114,11 @@ export default function HomePage() {
         {/* Metrics strip */}
         <div className="relative border-t border-border bg-card/60 backdrop-blur">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {METRICS.map((m) => (
-              <div key={m.label} className="text-center sm:text-left">
-                <div className="text-3xl font-bold text-foreground tabular-nums">{m.value}</div>
+            {METRICS.map((m, i) => (
+              <Reveal key={m.label} delay={i * 80} className="text-center sm:text-left">
+                <div className="font-display text-3xl font-bold text-foreground tabular-nums">{m.value}</div>
                 <div className="text-sm text-muted-foreground mt-0.5">{m.label}</div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -126,104 +127,112 @@ export default function HomePage() {
       {/* ───────────────────────── Feature bento grid ───────────────────────── */}
       <section className="border-t border-border bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28">
-          <div className="max-w-2xl mb-14">
+          <Reveal className="max-w-2xl mb-14">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">
               One platform, entire lifecycle
             </h2>
-            <p className="text-2xl sm:text-3xl font-semibold text-foreground text-balance">
+            <p className="font-display text-2xl sm:text-3xl font-semibold text-foreground text-balance">
               Every module your institution runs on — connected by default, not integrated
               after the fact.
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Featured: Admissions & Students */}
-            <div className="lg:col-span-7 rounded-2xl border border-border bg-card p-8 relative overflow-hidden group hover:border-primary/30 transition-colors">
-              <div
-                className="absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/15 transition-colors"
-                aria-hidden
-              />
-              <div className="relative">
-                <div className="inline-flex items-center justify-center size-12 rounded-xl bg-primary/10 text-primary mb-5">
-                  <GraduationCap className="size-6" />
+            <Reveal className="lg:col-span-7">
+              <div className="h-full rounded-2xl border border-border bg-card p-8 relative overflow-hidden group hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300">
+                <div
+                  className="absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/15 transition-colors"
+                  aria-hidden
+                />
+                <div className="relative">
+                  <div className="inline-flex items-center justify-center size-12 rounded-xl bg-primary/10 text-primary mb-5 group-hover:scale-110 transition-transform duration-300">
+                    <GraduationCap className="size-6" />
+                  </div>
+                  <h3 className="font-display text-xl font-semibold text-foreground">Admissions &amp; Students</h3>
+                  <p className="text-muted-foreground mt-2 max-w-md">
+                    From application to alumni, one record follows every student — admission,
+                    documents, guardians, attendance, fees and results, all in one profile.
+                  </p>
+                  <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80">
+                    {["Application intake", "Accept → convert to student", "Guardian records", "Full academic history"].map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <CheckCircle2 className="size-3.5 text-success shrink-0" /> {f}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">Admissions &amp; Students</h3>
-                <p className="text-muted-foreground mt-2 max-w-md">
-                  From application to alumni, one record follows every student — admission,
-                  documents, guardians, attendance, fees and results, all in one profile.
-                </p>
-                <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-foreground/80">
-                  {["Application intake", "Accept → convert to student", "Guardian records", "Full academic history"].map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <CheckCircle2 className="size-3.5 text-success shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </div>
+            </Reveal>
 
             {/* Featured: AI Assistant */}
-            <div className="lg:col-span-5 rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 via-card to-card p-8 relative overflow-hidden group hover:border-accent/40 transition-colors">
-              <div
-                className="absolute -right-12 -top-12 size-48 rounded-full bg-accent/15 blur-2xl group-hover:bg-accent/20 transition-colors"
-                aria-hidden
-              />
-              <div className="relative">
-                <div className="inline-flex items-center justify-center size-12 rounded-xl bg-accent/15 text-accent mb-5">
-                  <Sparkles className="size-6" />
+            <Reveal className="lg:col-span-5" delay={100}>
+              <div className="h-full rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 via-card to-card p-8 relative overflow-hidden group hover:border-accent/40 hover:shadow-xl hover:shadow-accent/10 hover:-translate-y-1 transition-all duration-300">
+                <div
+                  className="absolute -right-12 -top-12 size-48 rounded-full bg-accent/15 blur-2xl group-hover:bg-accent/20 transition-colors"
+                  aria-hidden
+                />
+                <div className="relative">
+                  <div className="inline-flex items-center justify-center size-12 rounded-xl bg-accent/15 text-accent mb-5 group-hover:scale-110 transition-transform duration-300">
+                    <Sparkles className="size-6" />
+                  </div>
+                  <h3 className="font-display text-xl font-semibold text-foreground">AI Assistant</h3>
+                  <p className="text-muted-foreground mt-2">
+                    A role-scoped copilot that never sees more than the signed-in user could.
+                    Every suggestion is advisory — humans approve grades, money and
+                    parent-facing messages.
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 mt-5 text-sm font-medium text-accent">
+                    See how it&apos;s scoped{" "}
+                    <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </span>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">AI Assistant</h3>
-                <p className="text-muted-foreground mt-2">
-                  A role-scoped copilot that never sees more than the signed-in user could.
-                  Every suggestion is advisory — humans approve grades, money and
-                  parent-facing messages.
-                </p>
-                <span className="inline-flex items-center gap-1.5 mt-5 text-sm font-medium text-accent">
-                  See how it&apos;s scoped <ArrowUpRight className="size-3.5" />
-                </span>
               </div>
-            </div>
+            </Reveal>
 
-            {SMALL_MODULES.map((m) => (
-              <div
-                key={m.label}
-                className="lg:col-span-3 rounded-2xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-md transition-all"
-              >
-                <div className={`inline-flex items-center justify-center size-10 rounded-lg mb-4 ${m.color}`}>
-                  <m.icon className="size-5" />
+            {SMALL_MODULES.map((m, i) => (
+              <Reveal key={m.label} className="lg:col-span-3" delay={150 + i * 60}>
+                <div className="h-full rounded-2xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-foreground/5 hover:-translate-y-1 transition-all duration-300 group">
+                  <div className={`inline-flex items-center justify-center size-10 rounded-lg mb-4 group-hover:scale-110 transition-transform duration-300 ${m.color}`}>
+                    <m.icon className="size-5" />
+                  </div>
+                  <h3 className="font-medium text-foreground">{m.label}</h3>
+                  <p className="text-sm text-muted-foreground mt-1.5">{m.desc}</p>
                 </div>
-                <h3 className="font-medium text-foreground">{m.label}</h3>
-                <p className="text-sm text-muted-foreground mt-1.5">{m.desc}</p>
-              </div>
+              </Reveal>
             ))}
 
             {/* Library & Hostel */}
-            <div className="lg:col-span-6 rounded-2xl border border-border bg-card p-8 flex items-start gap-5 hover:border-primary/30 transition-colors">
-              <div className="inline-flex items-center justify-center size-12 rounded-xl bg-chart-3/10 text-chart-3 shrink-0">
-                <BookOpen className="size-6" />
+            <Reveal className="lg:col-span-6">
+              <div className="h-full rounded-2xl border border-border bg-card p-8 flex items-start gap-5 hover:border-primary/30 hover:shadow-lg hover:shadow-foreground/5 transition-all duration-300 group">
+                <div className="inline-flex items-center justify-center size-12 rounded-xl bg-chart-3/10 text-chart-3 shrink-0 group-hover:scale-110 transition-transform duration-300">
+                  <BookOpen className="size-6" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-semibold text-foreground">Library &amp; Hostel</h3>
+                  <p className="text-muted-foreground mt-1.5">
+                    Book issue/return with live copy tracking, room allocation with occupancy
+                    tracking, mess and maintenance requests.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Library &amp; Hostel</h3>
-                <p className="text-muted-foreground mt-1.5">
-                  Book issue/return with live copy tracking, room allocation with occupancy
-                  tracking, mess and maintenance requests.
-                </p>
-              </div>
-            </div>
+            </Reveal>
 
             {/* Enterprise security */}
-            <div className="lg:col-span-6 rounded-2xl border border-border bg-card p-8 flex items-start gap-5 hover:border-primary/30 transition-colors">
-              <div className="inline-flex items-center justify-center size-12 rounded-xl bg-success-bg text-success shrink-0">
-                <ShieldCheck className="size-6" />
+            <Reveal className="lg:col-span-6" delay={80}>
+              <div className="h-full rounded-2xl border border-border bg-card p-8 flex items-start gap-5 hover:border-primary/30 hover:shadow-lg hover:shadow-foreground/5 transition-all duration-300 group">
+                <div className="inline-flex items-center justify-center size-12 rounded-xl bg-success-bg text-success shrink-0 group-hover:scale-110 transition-transform duration-300">
+                  <ShieldCheck className="size-6" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-semibold text-foreground">Enterprise security</h3>
+                  <p className="text-muted-foreground mt-1.5">
+                    PostgreSQL Row-Level Security on every table, 18-role RBAC, full audit trail
+                    — your data is isolated by the database itself, not just app code.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Enterprise security</h3>
-                <p className="text-muted-foreground mt-1.5">
-                  PostgreSQL Row-Level Security on every table, 18-role RBAC, full audit trail
-                  — your data is isolated by the database itself, not just app code.
-                </p>
-              </div>
-            </div>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -231,28 +240,28 @@ export default function HomePage() {
       {/* ───────────────────────── How it works ───────────────────────── */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28">
-          <div className="max-w-2xl mb-14">
+          <Reveal className="max-w-2xl mb-14">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">
               From signup to live
             </h2>
-            <p className="text-2xl sm:text-3xl font-semibold text-foreground text-balance">
+            <p className="font-display text-2xl sm:text-3xl font-semibold text-foreground text-balance">
               No implementation project. No sales-led onboarding queue.
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid sm:grid-cols-3 gap-8 relative">
             <div
               className="hidden sm:block absolute top-6 left-[16.5%] right-[16.5%] h-px bg-border"
               aria-hidden
             />
-            {STEPS.map((step) => (
-              <div key={step.n} className="relative">
-                <div className="inline-flex items-center justify-center size-12 rounded-full bg-primary text-primary-foreground font-semibold relative z-10">
+            {STEPS.map((step, i) => (
+              <Reveal key={step.n} delay={i * 120} className="relative">
+                <div className="inline-flex items-center justify-center size-12 rounded-full bg-primary text-primary-foreground font-semibold relative z-10 shadow-lg shadow-primary/25">
                   {step.n}
                 </div>
-                <h3 className="mt-5 font-semibold text-foreground text-lg">{step.title}</h3>
+                <h3 className="font-display mt-5 font-semibold text-foreground text-lg">{step.title}</h3>
                 <p className="mt-2 text-muted-foreground">{step.desc}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -261,30 +270,31 @@ export default function HomePage() {
       {/* ───────────────────────── Segments ───────────────────────── */}
       <section className="border-t border-border bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28">
-          <div className="max-w-2xl mb-14">
+          <Reveal className="max-w-2xl mb-14">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">
               Built for every kind of institution
             </h2>
-            <p className="text-2xl sm:text-3xl font-semibold text-foreground text-balance">
+            <p className="font-display text-2xl sm:text-3xl font-semibold text-foreground text-balance">
               One product, configured for how your institution actually runs.
             </p>
-          </div>
+          </Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {SEGMENTS.map((s) => (
-              <Link
-                key={s.label}
-                href="/solutions"
-                className="group rounded-xl border border-border bg-card p-5 hover:border-primary/30 hover:shadow-md transition-all"
-              >
-                <div className="inline-flex items-center justify-center size-9 rounded-lg bg-secondary/10 text-secondary mb-4">
-                  <Building2 className="size-4" />
-                </div>
-                <h3 className="font-medium text-foreground flex items-center gap-1">
-                  {s.label}
-                  <ArrowUpRight className="size-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">{s.desc}</p>
-              </Link>
+            {SEGMENTS.map((s, i) => (
+              <Reveal key={s.label} delay={i * 70}>
+                <Link
+                  href="/solutions"
+                  className="group block h-full rounded-xl border border-border bg-card p-5 hover:border-primary/30 hover:shadow-lg hover:shadow-foreground/5 hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="inline-flex items-center justify-center size-9 rounded-lg bg-secondary/10 text-secondary mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Building2 className="size-4" />
+                  </div>
+                  <h3 className="font-medium text-foreground flex items-center gap-1">
+                    {s.label}
+                    <ArrowUpRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">{s.desc}</p>
+                </Link>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -297,8 +307,8 @@ export default function HomePage() {
             { icon: Database, title: "Row-Level Security", desc: "Tenant isolation enforced by Postgres itself, not just application code." },
             { icon: Lock, title: "Role-scoped by design", desc: "18 roles, permission-checked on every request, front and back end." },
             { icon: Layers, title: "One connected system", desc: "One student record, one source of truth, across every module." },
-          ].map((item) => (
-            <div key={item.title} className="flex items-start gap-4">
+          ].map((item, i) => (
+            <Reveal key={item.title} delay={i * 90} className="flex items-start gap-4">
               <div className="inline-flex items-center justify-center size-10 rounded-lg bg-muted text-foreground shrink-0">
                 <item.icon className="size-5" />
               </div>
@@ -306,7 +316,7 @@ export default function HomePage() {
                 <h3 className="font-medium text-foreground">{item.title}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{item.desc}</p>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -322,27 +332,27 @@ export default function HomePage() {
           className="absolute -bottom-32 left-1/2 -translate-x-1/2 size-[36rem] rounded-full bg-accent/20 blur-3xl"
           aria-hidden
         />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-center">
-          <h2 className="text-3xl sm:text-4xl font-semibold text-balance">
+        <Reveal className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-center">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-balance">
             Ready to see Sutram on your own data?
           </h2>
           <p className="mt-3 text-primary-foreground/80 max-w-xl mx-auto text-lg">
             Spin up a free trial workspace in minutes, or book a walkthrough with our team.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" variant="secondary" className="shadow-xl" asChild>
+            <Button size="lg" variant="secondary" className="shadow-xl hover:-translate-y-0.5 transition-transform" asChild>
               <Link href="/signup">Start free trial</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:-translate-y-0.5 transition-transform"
               asChild
             >
               <Link href="/demo">Request a demo</Link>
             </Button>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );

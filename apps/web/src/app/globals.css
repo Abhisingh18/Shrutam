@@ -187,3 +187,10 @@
 .animate-float-slow-reverse {
   animation: float-slow-reverse 11s ease-in-out infinite;
 }
+
+/* Marketing-site display face — falls back to the shared sans font wherever
+   --font-display isn't defined (i.e. outside app/(marketing)/layout.tsx),
+   so this is safe to use anywhere without affecting the app dashboard. */
+.font-display {
+  font-family: var(--font-display), var(--font-sans);
+}

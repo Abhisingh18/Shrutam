@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/marketing/reveal";
 
 export const metadata: Metadata = {
   title: "Features",
@@ -182,23 +183,22 @@ const STATS = [
 
 function FeatureCard({ feature, delay }: { feature: Feature; delay: number }) {
   return (
-    <div
-      className="group rounded-2xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 fill-mode-both"
-      style={{ animationDelay: `${delay}ms`, animationDuration: "600ms" }}
-    >
-      <div className="inline-flex items-center justify-center size-11 rounded-xl bg-muted text-foreground mb-4 group-hover:scale-110 transition-transform">
-        <feature.icon className="size-5" />
+    <Reveal delay={delay}>
+      <div className="group h-full rounded-2xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300">
+        <div className="inline-flex items-center justify-center size-11 rounded-xl bg-muted text-foreground mb-4 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
+          <feature.icon className="size-5" />
+        </div>
+        <h3 className="font-display font-semibold text-foreground">{feature.title}</h3>
+        <ul className="mt-3 space-y-2">
+          {feature.points.map((p) => (
+            <li key={p} className="text-sm text-muted-foreground flex gap-2 leading-snug">
+              <CheckCircle2 className="size-3.5 text-success shrink-0 mt-0.5" />
+              <span>{p}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <h3 className="font-semibold text-foreground">{feature.title}</h3>
-      <ul className="mt-3 space-y-2">
-        {feature.points.map((p) => (
-          <li key={p} className="text-sm text-muted-foreground flex gap-2 leading-snug">
-            <CheckCircle2 className="size-3.5 text-success shrink-0 mt-0.5" />
-            <span>{p}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </Reveal>
   );
 }
 
@@ -206,16 +206,16 @@ function CategorySection({ category, index }: { category: Category; index: numbe
   return (
     <section className={index > 0 ? "border-t border-border" : undefined}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20">
-        <div className="max-w-2xl mb-10 animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500">
+        <Reveal className="max-w-2xl mb-10">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide mb-4 ${category.badgeClass}`}
           >
             {category.eyebrow}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-balance">
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-foreground text-balance">
             {category.heading}
           </h2>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {category.features.map((feature, i) => (
@@ -248,7 +248,7 @@ export default function FeaturesPage() {
               <Layers className="size-3.5" />
               Every module, one platform
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground text-balance leading-[1.08]">
               Everything your institution{" "}
               <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
                 runs on
@@ -277,11 +277,11 @@ export default function FeaturesPage() {
 
         <div className="relative border-t border-border bg-card/60 backdrop-blur">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 grid grid-cols-3 gap-6">
-            {STATS.map((s) => (
-              <div key={s.label} className="text-center sm:text-left">
-                <div className="text-3xl font-bold text-foreground tabular-nums">{s.value}</div>
+            {STATS.map((s, i) => (
+              <Reveal key={s.label} delay={i * 80} className="text-center sm:text-left">
+                <div className="font-display text-3xl font-bold text-foreground tabular-nums">{s.value}</div>
                 <div className="text-sm text-muted-foreground mt-0.5">{s.label}</div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -295,43 +295,43 @@ export default function FeaturesPage() {
       {/* ───────────────────────── Intelligence & engagement ───────────────────────── */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-16 sm:py-20">
-          <div className="max-w-2xl mb-10 animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500">
+          <Reveal className="max-w-2xl mb-10">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent mb-4">
               Intelligence &amp; engagement
             </span>
-            <h2 className="text-2xl sm:text-3xl font-semibold text-foreground text-balance">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-foreground text-balance">
               The layer that makes the rest smarter
             </h2>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div
-              className="lg:col-span-7 rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 via-card to-card p-8 relative overflow-hidden group hover:border-accent/40 transition-colors animate-in fade-in slide-in-from-bottom-3 fill-mode-both duration-500"
-            >
-              <div
-                className="absolute -right-16 -top-16 size-56 rounded-full bg-accent/15 blur-2xl group-hover:bg-accent/20 transition-colors"
-                aria-hidden
-              />
-              <div className="relative">
-                <div className="inline-flex items-center justify-center size-12 rounded-xl bg-accent/15 text-accent mb-5">
-                  <AI_FEATURE.icon className="size-6" />
+            <Reveal className="lg:col-span-7">
+              <div className="h-full rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 via-card to-card p-8 relative overflow-hidden group hover:border-accent/40 hover:shadow-xl hover:shadow-accent/10 hover:-translate-y-1 transition-all duration-300">
+                <div
+                  className="absolute -right-16 -top-16 size-56 rounded-full bg-accent/15 blur-2xl group-hover:bg-accent/20 transition-colors"
+                  aria-hidden
+                />
+                <div className="relative">
+                  <div className="inline-flex items-center justify-center size-12 rounded-xl bg-accent/15 text-accent mb-5 group-hover:scale-110 transition-transform duration-300">
+                    <AI_FEATURE.icon className="size-6" />
+                  </div>
+                  <h3 className="font-display text-xl font-semibold text-foreground">{AI_FEATURE.title}</h3>
+                  <ul className="mt-4 space-y-2 max-w-md">
+                    {AI_FEATURE.points.map((p) => (
+                      <li key={p} className="text-sm text-foreground/80 flex gap-2">
+                        <CheckCircle2 className="size-3.5 text-accent shrink-0 mt-0.5" />
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">{AI_FEATURE.title}</h3>
-                <ul className="mt-4 space-y-2 max-w-md">
-                  {AI_FEATURE.points.map((p) => (
-                    <li key={p} className="text-sm text-foreground/80 flex gap-2">
-                      <CheckCircle2 className="size-3.5 text-accent shrink-0 mt-0.5" />
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </div>
+            </Reveal>
 
             <div className="lg:col-span-5 flex flex-col gap-5">
               {CLOSING_FEATURES.map((feature, i) => (
                 <div key={feature.title} className="flex-1">
-                  <FeatureCard feature={feature} delay={200 + i * 100} />
+                  <FeatureCard feature={feature} delay={100 + i * 100} />
                 </div>
               ))}
             </div>
@@ -350,27 +350,27 @@ export default function FeaturesPage() {
           className="absolute -bottom-32 left-1/2 -translate-x-1/2 size-[36rem] rounded-full bg-accent/20 blur-3xl"
           aria-hidden
         />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-center">
-          <h2 className="text-3xl sm:text-4xl font-semibold text-balance">
+        <Reveal className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-center">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-balance">
             See every module working together
           </h2>
           <p className="mt-3 text-primary-foreground/80 max-w-xl mx-auto text-lg">
             Spin up a free trial workspace in minutes, or book a walkthrough with our team.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" variant="secondary" className="shadow-xl" asChild>
+            <Button size="lg" variant="secondary" className="shadow-xl hover:-translate-y-0.5 transition-transform" asChild>
               <Link href="/signup">Start free trial</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:-translate-y-0.5 transition-transform"
               asChild
             >
               <Link href="/demo">Request a demo</Link>
             </Button>
           </div>
-        </div>
+        </Reveal>
       </section>
     </>
   );
