@@ -43,7 +43,10 @@ export function useCreateSection() {
   return useMutation({
     mutationFn: (input: SectionCreateInput) =>
       apiFetch<Section>("/academics/sections", { method: "POST", body: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sections"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sections"] });
+      qc.invalidateQueries({ queryKey: ["academics", "summary"] });
+    },
   });
 }
 
@@ -55,6 +58,17 @@ export function useUpdateSection(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sections"] });
       qc.invalidateQueries({ queryKey: ["sections", "detail", id] });
+    },
+  });
+}
+
+export function useDeleteSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/academics/sections/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sections"] });
+      qc.invalidateQueries({ queryKey: ["academics", "summary"] });
     },
   });
 }

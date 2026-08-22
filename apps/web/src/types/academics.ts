@@ -60,6 +60,30 @@ export interface ProgramCreateInput {
   degree_type: Program["degree_type"];
 }
 
+export type ProgramUpdateInput = Partial<Pick<ProgramCreateInput, "name" | "code" | "degree_type">>;
+
+export interface AcademicYear {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+}
+
+export interface AcademicYearListResponse {
+  data: AcademicYear[];
+  meta: { page: number; page_size: number; total: number };
+}
+
+export interface AcademicYearCreateInput {
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current?: boolean;
+}
+
+export type AcademicYearUpdateInput = Partial<AcademicYearCreateInput>;
+
 export interface Semester {
   id: string;
   name: string;
@@ -81,6 +105,10 @@ export interface SemesterCreateInput {
   end_date: string;
   is_current?: boolean;
 }
+
+export type SemesterUpdateInput = Partial<
+  Pick<SemesterCreateInput, "name" | "start_date" | "end_date" | "is_current">
+>;
 
 export interface Section {
   id: string;
@@ -107,3 +135,12 @@ export interface SectionCreateInput {
 export type SectionUpdateInput = Partial<
   Pick<SectionCreateInput, "name" | "capacity" | "class_teacher_id">
 >;
+
+export interface AcademicsSummary {
+  departments: number;
+  programs: number;
+  academic_years: number;
+  semesters: number;
+  sections: number;
+  subjects: number;
+}

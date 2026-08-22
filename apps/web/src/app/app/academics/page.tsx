@@ -1,115 +1,183 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { RequirePermission } from "@/components/auth/require-permission";
-import { ListPageTemplate } from "@/components/templates/list-page-template";
+import Link from "next/link";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  CalendarRange,
+  Landmark,
+  Sparkles,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { RequirePermission } from "@/components/auth/require-permission";
+import { AcademicsSubNav } from "@/components/academics/academics-subnav";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { useDepartments } from "@/hooks/use-departments";
+import { useAcademicsSummary } from "@/hooks/use-academics-summary";
+import type { AcademicsSummary } from "@/types/academics";
 
-function AcademicsListPage() {
-  const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const pageSize = 20;
+interface PipelineStep {
+  key: keyof AcademicsSummary;
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  accent: string;
+}
 
-  const { data, isLoading, isFetching } = useDepartments({ page, pageSize, search });
+const STEPS: PipelineStep[] = [
+  {
+    key: "departments",
+    href: "/app/academics/departments",
+    label: "Departments",
+    description: "The academic org chart root.",
+    icon: Landmark,
+    accent: "from-chart-1/20 to-chart-1/5 text-chart-1",
+  },
+  {
+    key: "programs",
+    href: "/app/academics/programs",
+    label: "Programs",
+    description: "Degrees offered per department.",
+    icon: BookOpen,
+    accent: "from-chart-2/20 to-chart-2/5 text-chart-2",
+  },
+  {
+    key: "academic_years",
+    href: "/app/academics/academic-years",
+    label: "Academic Years",
+    description: "e.g. 2026–2027.",
+    icon: CalendarRange,
+    accent: "from-chart-3/20 to-chart-3/5 text-chart-3",
+  },
+  {
+    key: "semesters",
+    href: "/app/academics/semesters",
+    label: "Semesters",
+    description: "Terms within a year.",
+    icon: CalendarDays,
+    accent: "from-chart-4/20 to-chart-4/5 text-chart-4",
+  },
+  {
+    key: "sections",
+    href: "/app/academics/sections",
+    label: "Sections",
+    description: "Class groups + class teacher.",
+    icon: Users,
+    accent: "from-chart-5/20 to-chart-5/5 text-chart-5",
+  },
+  {
+    key: "subjects",
+    href: "/app/academics/subjects",
+    label: "Subjects",
+    description: "What gets taught.",
+    icon: Sparkles,
+    accent: "from-primary/20 to-primary/5 text-primary",
+  },
+];
+
+function PipelineCard({ step, count }: { step: PipelineStep; count: number | undefined }) {
+  const Icon = step.icon;
+  return (
+    <Link
+      href={step.href}
+      className="group relative flex-1 min-w-[150px] rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30"
+    >
+      <div
+        className={`inline-flex items-center justify-center size-11 rounded-xl bg-gradient-to-br ${step.accent} mb-4`}
+      >
+        <Icon className="size-5" />
+      </div>
+      <div className="text-3xl font-bold text-foreground tabular-nums">
+        {count === undefined ? <Skeleton className="h-8 w-12" /> : count}
+      </div>
+      <div className="text-sm font-medium text-foreground mt-1">{step.label}</div>
+      <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{step.description}</p>
+      <ArrowRight className="absolute top-5 right-5 size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+    </Link>
+  );
+}
+
+function AcademicsHubPage() {
+  const { data: summary, isLoading } = useAcademicsSummary();
+  const isEmpty =
+    !isLoading &&
+    summary &&
+    Object.values(summary).every((v) => v === 0);
 
   return (
-    <ListPageTemplate
-      title="Academics"
-      description="Departments across your institution — the root of programs, subjects, and sections."
-      primaryAction={{ label: "Add department", onClick: () => router.push("/app/academics/new") }}
-      search={{
-        value: search,
-        onChange: (v) => {
-          setSearch(v);
-          setPage(1);
-        },
-        placeholder: "Search by name…",
-      }}
-      toolbarExtra={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => router.push("/app/academics/subjects")}>
-            View subjects
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/app/academics/timetable")}>
-            Timetable
-          </Button>
-        </div>
-      }
-      page={page}
-      pageSize={pageSize}
-      total={data?.meta.total ?? 0}
-      onPageChange={setPage}
-    >
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Code</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead className="w-10" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading &&
-            Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 3 }).map((__, j) => (
-                  <TableCell key={j}>
-                    <Skeleton className="h-4 w-full" />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+    <div className="flex flex-col h-full">
+      <div className="px-6 py-5 border-b border-border">
+        <h1 className="text-xl font-semibold text-foreground">Academics</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          The full hierarchy your institution runs on — set it up once, top to bottom.
+        </p>
+      </div>
+      <AcademicsSubNav />
 
-          {!isLoading && data?.data.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
-                {search ? "No departments match your search." : "No departments yet — add your first one."}
-              </TableCell>
-            </TableRow>
+      <div className="flex-1 overflow-auto px-6 py-8">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {isEmpty && (
+            <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-5 flex items-start gap-3">
+              <Sparkles className="size-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Let&apos;s set up your academic structure
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Start with a Department, then add a Program under it, an Academic Year, a
+                  Semester, and finally Sections and Subjects — each step below unlocks the
+                  next.
+                </p>
+              </div>
+            </div>
           )}
 
-          {!isLoading &&
-            data?.data.map((department) => (
-              <TableRow
-                key={department.id}
-                className={`cursor-pointer ${isFetching ? "opacity-60" : ""}`}
-                onClick={() => router.push(`/app/academics/${department.id}`)}
-              >
-                <TableCell className="font-mono text-xs">{department.code}</TableCell>
-                <TableCell className="font-medium text-foreground">{department.name}</TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push(`/app/academics/${department.id}/edit`)}
-                  >
-                    Edit
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-        </TableBody>
-      </Table>
-    </ListPageTemplate>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-sm font-semibold text-foreground">The hierarchy</h2>
+              <span className="text-xs text-muted-foreground">
+                Departments → Programs → Academic Years → Semesters → Sections → Subjects
+              </span>
+            </div>
+            <div className="flex flex-wrap items-stretch gap-3">
+              {STEPS.map((step, i) => (
+                <div key={step.key} className="flex items-stretch gap-3 flex-1 min-w-[150px]">
+                  <PipelineCard step={step} count={summary?.[step.key]} />
+                  {i < STEPS.length - 1 && (
+                    <div className="hidden lg:flex items-center text-border">
+                      <ArrowRight className="size-5" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="text-sm font-semibold text-foreground mb-1">Timetable</h2>
+            <p className="text-sm text-muted-foreground mb-3">
+              Once you have at least one Section, build its weekly schedule with automatic
+              conflict detection.
+            </p>
+            <Link
+              href="/app/academics/timetable"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              Open timetable <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default function Page() {
   return (
     <RequirePermission permission="courses:catalog:read">
-      <AcademicsListPage />
+      <AcademicsHubPage />
     </RequirePermission>
   );
 }

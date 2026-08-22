@@ -59,7 +59,7 @@ function NewSubjectPage() {
         credits: values.credits,
       });
       toast.success(`${subject.name} added`);
-      router.push(`/app/academics/${subject.department_id}`);
+      router.push(`/app/academics/departments/${subject.department_id}`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to add subject");
     }

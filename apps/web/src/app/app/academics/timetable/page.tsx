@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { RequirePermission } from "@/components/auth/require-permission";
+import { AcademicsSubNav } from "@/components/academics/academics-subnav";
 import { usePermissions } from "@/hooks/use-me";
 import { cn } from "@/lib/utils";
 import {
@@ -308,6 +309,7 @@ function TimetablePage() {
 
   return (
     <div className="flex flex-col h-full">
+      <AcademicsSubNav />
       <div className="flex flex-wrap items-start justify-between gap-4 px-6 py-5 border-b border-border">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Timetable</h1>

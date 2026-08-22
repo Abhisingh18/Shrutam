@@ -10,6 +10,7 @@ from app.core.permissions import CurrentUser, require_permission
 from app.models.academics import Department, Program, Section, Semester, Subject
 from app.models.tenancy import AcademicYear
 from app.schemas.academics import (
+    AcademicsSummary,
     AcademicYearCreate,
     AcademicYearListResponse,
     AcademicYearRead,
@@ -21,6 +22,8 @@ from app.schemas.academics import (
     ProgramCreate,
     ProgramListResponse,
     ProgramRead,
+    AcademicYearUpdate,
+    ProgramUpdate,
     SectionCreate,
     SectionListResponse,
     SectionRead,
@@ -28,6 +31,7 @@ from app.schemas.academics import (
     SemesterCreate,
     SemesterListResponse,
     SemesterRead,
+    SemesterUpdate,
     SubjectCreate,
     SubjectListResponse,
     SubjectRead,
@@ -35,6 +39,30 @@ from app.schemas.academics import (
 )
 
 router = APIRouter(prefix="/academics", tags=["academics"])
+
+
+@router.get("/summary", response_model=AcademicsSummary)
+async def get_academics_summary(
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> AcademicsSummary:
+    """Single round-trip count across the whole hierarchy — backs the Academics
+    hub's pipeline view instead of six separate list calls just for totals."""
+
+    async def _count(model) -> int:
+        stmt = select(func.count()).select_from(model).where(
+            model.tenant_id == current_user.tenant_id, model.deleted_at.is_(None)
+        )
+        return (await db.execute(stmt)).scalar_one()
+
+    return AcademicsSummary(
+        departments=await _count(Department),
+        programs=await _count(Program),
+        academic_years=await _count(AcademicYear),
+        semesters=await _count(Semester),
+        sections=await _count(Section),
+        subjects=await _count(Subject),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -294,6 +322,58 @@ async def create_program(
     return response
 
 
+async def _get_program_or_404(
+    program_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> Program:
+    stmt = select(Program).where(
+        Program.id == program_id, Program.tenant_id == tenant_id, Program.deleted_at.is_(None)
+    )
+    program = (await db.execute(stmt)).scalar_one_or_none()
+    if program is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Program not found"}},
+        )
+    return program
+
+
+@router.get("/programs/{program_id}", response_model=ProgramRead)
+async def get_program(
+    program_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> ProgramRead:
+    program = await _get_program_or_404(program_id, current_user.tenant_id, db)
+    return ProgramRead.model_validate(program)
+
+
+@router.patch("/programs/{program_id}", response_model=ProgramRead)
+async def update_program(
+    program_id: uuid.UUID,
+    body: ProgramUpdate,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> ProgramRead:
+    program = await _get_program_or_404(program_id, current_user.tenant_id, db)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(program, field, value)
+    await db.flush()
+    response = ProgramRead.model_validate(program)
+    await db.commit()
+    return response
+
+
+@router.delete("/programs/{program_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_program(
+    program_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:delete")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> None:
+    program = await _get_program_or_404(program_id, current_user.tenant_id, db)
+    program.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+
+
 # ---------------------------------------------------------------------------
 # Academic Year — list + create only (prerequisite for Semester -> Section,
 # which the Timetable module FKs into; added retroactively since nothing had
@@ -338,6 +418,60 @@ async def create_academic_year(
     response = AcademicYearRead.model_validate(year)
     await db.commit()
     return response
+
+
+async def _get_academic_year_or_404(
+    year_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> AcademicYear:
+    stmt = select(AcademicYear).where(
+        AcademicYear.id == year_id,
+        AcademicYear.tenant_id == tenant_id,
+        AcademicYear.deleted_at.is_(None),
+    )
+    year = (await db.execute(stmt)).scalar_one_or_none()
+    if year is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Academic year not found"}},
+        )
+    return year
+
+
+@router.get("/academic-years/{year_id}", response_model=AcademicYearRead)
+async def get_academic_year(
+    year_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> AcademicYearRead:
+    year = await _get_academic_year_or_404(year_id, current_user.tenant_id, db)
+    return AcademicYearRead.model_validate(year)
+
+
+@router.patch("/academic-years/{year_id}", response_model=AcademicYearRead)
+async def update_academic_year(
+    year_id: uuid.UUID,
+    body: AcademicYearUpdate,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> AcademicYearRead:
+    year = await _get_academic_year_or_404(year_id, current_user.tenant_id, db)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(year, field, value)
+    await db.flush()
+    response = AcademicYearRead.model_validate(year)
+    await db.commit()
+    return response
+
+
+@router.delete("/academic-years/{year_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_academic_year(
+    year_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:delete")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> None:
+    year = await _get_academic_year_or_404(year_id, current_user.tenant_id, db)
+    year.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +519,60 @@ async def create_semester(
     response = SemesterRead.model_validate(semester)
     await db.commit()
     return response
+
+
+async def _get_semester_or_404(
+    semester_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession
+) -> Semester:
+    stmt = select(Semester).where(
+        Semester.id == semester_id,
+        Semester.tenant_id == tenant_id,
+        Semester.deleted_at.is_(None),
+    )
+    semester = (await db.execute(stmt)).scalar_one_or_none()
+    if semester is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "not_found", "message": "Semester not found"}},
+        )
+    return semester
+
+
+@router.get("/semesters/{semester_id}", response_model=SemesterRead)
+async def get_semester(
+    semester_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:read")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> SemesterRead:
+    semester = await _get_semester_or_404(semester_id, current_user.tenant_id, db)
+    return SemesterRead.model_validate(semester)
+
+
+@router.patch("/semesters/{semester_id}", response_model=SemesterRead)
+async def update_semester(
+    semester_id: uuid.UUID,
+    body: SemesterUpdate,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:write")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> SemesterRead:
+    semester = await _get_semester_or_404(semester_id, current_user.tenant_id, db)
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(semester, field, value)
+    await db.flush()
+    response = SemesterRead.model_validate(semester)
+    await db.commit()
+    return response
+
+
+@router.delete("/semesters/{semester_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_semester(
+    semester_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_permission("courses:catalog:delete")),
+    db: AsyncSession = Depends(get_tenant_db),
+) -> None:
+    semester = await _get_semester_or_404(semester_id, current_user.tenant_id, db)
+    semester.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
 
 
 # ---------------------------------------------------------------------------

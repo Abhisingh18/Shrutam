@@ -108,7 +108,7 @@ function DepartmentDetailPage({ id }: { id: string }) {
       subtitle={department ? `Code ${department.code}` : undefined}
       actions={
         <Button variant="outline" asChild>
-          <Link href={`/app/academics/${id}/edit`}>
+          <Link href={`/app/academics/departments/${id}/edit`}>
             <Pencil className="size-4" /> Edit
           </Link>
         </Button>
@@ -120,7 +120,7 @@ function DepartmentDetailPage({ id }: { id: string }) {
       rightRail={
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground">Quick actions</h3>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => router.push("/app/academics")}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => router.push("/app/academics/departments")}>
             Back to all departments
           </Button>
         </div>

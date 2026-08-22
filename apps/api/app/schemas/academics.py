@@ -91,6 +91,12 @@ class ProgramCreate(ProgramBase):
     pass
 
 
+class ProgramUpdate(BaseModel):
+    name: str | None = None
+    code: str | None = None
+    degree_type: str | None = Field(default=None, pattern="^(undergraduate|postgraduate|diploma)$")
+
+
 class ProgramRead(ProgramBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -116,6 +122,13 @@ class AcademicYearBase(BaseModel):
 
 class AcademicYearCreate(AcademicYearBase):
     pass
+
+
+class AcademicYearUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=32)
+    start_date: str | None = None
+    end_date: str | None = None
+    is_current: bool | None = None
 
 
 class AcademicYearRead(AcademicYearBase):
@@ -144,6 +157,13 @@ class SemesterBase(BaseModel):
 
 class SemesterCreate(SemesterBase):
     pass
+
+
+class SemesterUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=64)
+    start_date: str | None = None
+    end_date: str | None = None
+    is_current: bool | None = None
 
 
 class SemesterRead(SemesterBase):
@@ -189,3 +209,17 @@ class SectionRead(SectionBase):
 class SectionListResponse(BaseModel):
     data: list[SectionRead]
     meta: PaginationMeta
+
+
+# ---------------------------------------------------------------------------
+# Hub summary
+# ---------------------------------------------------------------------------
+
+
+class AcademicsSummary(BaseModel):
+    departments: int
+    programs: int
+    academic_years: int
+    semesters: int
+    sections: int
+    subjects: int
