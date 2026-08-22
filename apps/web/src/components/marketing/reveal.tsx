@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 
 type RevealDirection = "up" | "left" | "right" | "none";
@@ -11,6 +11,33 @@ const DIRECTION_CLASS: Record<RevealDirection, string> = {
   right: "translate-x-6",
   none: "",
 };
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(callback: () => void) {
+  const mql = window.matchMedia(REDUCED_MOTION_QUERY);
+  mql.addEventListener("change", callback);
+  return () => mql.removeEventListener("change", callback);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
+}
+
+/** Subscribes to the OS-level reduced-motion preference via the browser API
+ * itself (useSyncExternalStore) rather than mirroring it into state from an
+ * effect — avoids the synchronous setState-in-effect anti-pattern entirely. */
+function usePrefersReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot,
+  );
+}
 
 /**
  * Scroll-triggered fade/slide-in — the site's other entrance animations
@@ -36,32 +63,32 @@ export function Reveal({
   once?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [inView, setInView] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    // Reduced-motion preference is reflected below via `visible`, no need to observe.
+    if (reducedMotion) return;
+
     const node = ref.current;
     if (!node) return;
-
-    // Respect reduced-motion preference — show content immediately, no observer needed.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
-    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisible(true);
+          setInView(true);
           if (once) observer.disconnect();
         } else if (!once) {
-          setVisible(false);
+          setInView(false);
         }
       },
       { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [once]);
+  }, [reducedMotion, once]);
+
+  const visible = reducedMotion || inView;
 
   return (
     <div
