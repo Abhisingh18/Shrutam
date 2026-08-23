@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 
 export const metadata: Metadata = {
   title: "Request a demo",

@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/shared/reveal";
 
 interface DetailTab {
   value: string;
@@ -40,10 +41,10 @@ export function DetailPageTemplate({
 }: DetailPageTemplateProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
+      <Reveal className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
         <div className="flex items-center gap-4">
-          <Avatar className="size-12">
-            <AvatarFallback className="bg-primary text-primary-foreground">
+          <Avatar className="size-12 shadow-sm shadow-primary/20">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-semibold">
               {title.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -63,7 +64,7 @@ export function DetailPageTemplate({
           </div>
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
-      </div>
+      </Reveal>
 
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 min-w-0 overflow-auto">

@@ -16,6 +16,7 @@ import { useMyAttendance, useMyInvoices, useMyResults } from "@/hooks/use-me-por
 import { StatTile } from "@/components/widgets/stat-tile";
 import { CircularProgress } from "@/components/widgets/circular-progress";
 import { ChildSelector } from "@/components/me/child-selector";
+import { Reveal } from "@/components/shared/reveal";
 import {
   PLATFORM_NAV_ITEM,
   SELF_SERVICE_NAV_ITEMS,
@@ -32,29 +33,40 @@ function QuickStats() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatTile
-        label="Total students"
-        value={data?.total_students ?? 0}
-        icon={GraduationCap}
-        loading={isLoading}
-        trend={data ? { direction: "up", label: `${data.active_students} active` } : undefined}
-      />
-      <StatTile label="Total faculty" value={data?.total_faculty ?? 0} icon={Users} loading={isLoading} />
-      <StatTile
-        label="Today's attendance"
-        value={data ? `${data.todays_attendance_present}/${data.todays_attendance_total}` : "0/0"}
-        icon={CalendarCheck}
-        loading={isLoading}
-      />
-      <StatTile
-        label="Pending invoices"
-        value={data?.pending_invoices_count ?? 0}
-        icon={Wallet}
-        loading={isLoading}
-        trend={
-          data ? { direction: "down", label: `₹${data.pending_invoices_amount} outstanding` } : undefined
-        }
-      />
+      <Reveal delay={0}>
+        <StatTile
+          label="Total students"
+          value={data?.total_students ?? 0}
+          icon={GraduationCap}
+          loading={isLoading}
+          tone="primary"
+          trend={data ? { direction: "up", label: `${data.active_students} active` } : undefined}
+        />
+      </Reveal>
+      <Reveal delay={60}>
+        <StatTile label="Total faculty" value={data?.total_faculty ?? 0} icon={Users} loading={isLoading} tone="chart-2" />
+      </Reveal>
+      <Reveal delay={120}>
+        <StatTile
+          label="Today's attendance"
+          value={data ? `${data.todays_attendance_present}/${data.todays_attendance_total}` : "0/0"}
+          icon={CalendarCheck}
+          loading={isLoading}
+          tone="chart-4"
+        />
+      </Reveal>
+      <Reveal delay={180}>
+        <StatTile
+          label="Pending invoices"
+          value={data?.pending_invoices_count ?? 0}
+          icon={Wallet}
+          loading={isLoading}
+          tone="chart-1"
+          trend={
+            data ? { direction: "down", label: `₹${data.pending_invoices_amount} outstanding` } : undefined
+          }
+        />
+      </Reveal>
     </div>
   );
 }
@@ -75,64 +87,67 @@ function SelfServiceDashboard({ firstName }: { firstName: string | undefined }) 
 
   return (
     <div className="p-6 space-y-8">
-      <div>
+      <Reveal>
         <h1 className="text-xl font-semibold text-foreground">
           {firstName ? `Welcome back, ${firstName}` : "Welcome"}
         </h1>
         <div className="mt-2">
           <ChildSelector selectedId={studentId} onSelect={setStudentId} />
         </div>
-      </div>
+      </Reveal>
 
-      <div className="rounded-xl border border-border bg-card p-6 flex flex-wrap items-center gap-8">
-        <CircularProgress
-          value={attendanceRate ?? 0}
-          size="md"
-          tone={
-            attendanceRate === null ? "primary" : attendanceRate >= 90 ? "success" : attendanceRate >= 75 ? "warning" : "destructive"
-          }
-          valueLabel={attendanceRate !== null ? `${attendanceRate}%` : "—"}
-          label="Attendance"
-        />
-        <CircularProgress
-          value={results?.cgpa.cgpa ?? 0}
-          max={10}
-          size="md"
-          tone={
-            results?.cgpa.cgpa === null || results?.cgpa.cgpa === undefined
-              ? "primary"
-              : results.cgpa.cgpa >= 8
-                ? "success"
-                : results.cgpa.cgpa >= 6
-                  ? "warning"
-                  : "destructive"
-          }
-          valueLabel={results?.cgpa.cgpa !== null && results?.cgpa.cgpa !== undefined ? results.cgpa.cgpa.toFixed(1) : "—"}
-          label="CGPA"
-        />
-        <div className="flex-1 min-w-[160px]">
-          <StatTile label="Outstanding invoices" value={outstandingCount} icon={Wallet} />
+      <Reveal delay={60}>
+        <div className="rounded-xl border border-border bg-card p-6 flex flex-wrap items-center gap-8">
+          <CircularProgress
+            value={attendanceRate ?? 0}
+            size="md"
+            tone={
+              attendanceRate === null ? "primary" : attendanceRate >= 90 ? "success" : attendanceRate >= 75 ? "warning" : "destructive"
+            }
+            valueLabel={attendanceRate !== null ? `${attendanceRate}%` : "—"}
+            label="Attendance"
+          />
+          <CircularProgress
+            value={results?.cgpa.cgpa ?? 0}
+            max={10}
+            size="md"
+            tone={
+              results?.cgpa.cgpa === null || results?.cgpa.cgpa === undefined
+                ? "primary"
+                : results.cgpa.cgpa >= 8
+                  ? "success"
+                  : results.cgpa.cgpa >= 6
+                    ? "warning"
+                    : "destructive"
+            }
+            valueLabel={results?.cgpa.cgpa !== null && results?.cgpa.cgpa !== undefined ? results.cgpa.cgpa.toFixed(1) : "—"}
+            label="CGPA"
+          />
+          <div className="flex-1 min-w-[160px]">
+            <StatTile label="Outstanding invoices" value={outstandingCount} icon={Wallet} tone="chart-1" />
+          </div>
         </div>
-      </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {links.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="group flex items-start gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition-all"
-          >
-            <div className="inline-flex items-center justify-center size-10 rounded-lg bg-muted text-foreground shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-              <item.icon className="size-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-foreground flex items-center gap-1.5">
-                {item.label}
-                <ArrowRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
+        {links.map((item, i) => (
+          <Reveal key={item.href} delay={i * 60}>
+            <Link
+              href={item.href}
+              className="group flex items-start gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/40 hover:shadow-md hover:shadow-foreground/5 hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <div className="inline-flex items-center justify-center size-10 rounded-lg bg-muted text-foreground shrink-0 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110 transition-all duration-300">
+                <item.icon className="size-5" />
               </div>
-              <div className="text-sm text-muted-foreground mt-0.5">{item.description}</div>
-            </div>
-          </Link>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-foreground flex items-center gap-1.5">
+                  {item.label}
+                  <ArrowRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
+                </div>
+                <div className="text-sm text-muted-foreground mt-0.5">{item.description}</div>
+              </div>
+            </Link>
+          </Reveal>
         ))}
       </div>
     </div>
@@ -162,7 +177,7 @@ function AdminDashboard({
 
   return (
     <div className="p-6 space-y-8">
-      <div>
+      <Reveal>
         <h1 className="text-xl font-semibold text-foreground">
           {firstName ? `Welcome back, ${firstName}` : "Welcome"}
         </h1>
@@ -171,7 +186,7 @@ function AdminDashboard({
           {institutionName && ` · ${institutionName}`}
           {institutionType && ` (${institutionType.replace(/_/g, " ")})`}
         </p>
-      </div>
+      </Reveal>
 
       <QuickStats />
 
@@ -182,19 +197,21 @@ function AdminDashboard({
         </p>
 
         {platformVisible && (
-          <Link
-            href={PLATFORM_NAV_ITEM.href}
-            className="group mb-3 flex items-center gap-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 hover:border-primary transition-colors"
-          >
-            <div className="inline-flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary shrink-0">
-              <PLATFORM_NAV_ITEM.icon className="size-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-foreground">{PLATFORM_NAV_ITEM.label}</div>
-              <div className="text-sm text-muted-foreground truncate">{PLATFORM_NAV_ITEM.description}</div>
-            </div>
-            <ArrowRight className="size-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-          </Link>
+          <Reveal>
+            <Link
+              href={PLATFORM_NAV_ITEM.href}
+              className="group mb-3 flex items-center gap-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 hover:border-primary hover:shadow-sm transition-all"
+            >
+              <div className="inline-flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <PLATFORM_NAV_ITEM.icon className="size-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-foreground">{PLATFORM_NAV_ITEM.label}</div>
+                <div className="text-sm text-muted-foreground truncate">{PLATFORM_NAV_ITEM.description}</div>
+              </div>
+              <ArrowRight className="size-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+            </Link>
+          </Reveal>
         )}
 
         {workspaceItems.length === 0 ? (
@@ -204,23 +221,24 @@ function AdminDashboard({
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {workspaceItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group flex items-start gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition-all"
-              >
-                <div className="inline-flex items-center justify-center size-10 rounded-lg bg-muted text-foreground shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                  <item.icon className="size-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground flex items-center gap-1.5">
-                    {item.label}
-                    <ArrowRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
+            {workspaceItems.map((item, i) => (
+              <Reveal key={item.href} delay={Math.min(i, 8) * 40}>
+                <Link
+                  href={item.href}
+                  className="group flex items-start gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/40 hover:shadow-md hover:shadow-foreground/5 hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <div className="inline-flex items-center justify-center size-10 rounded-lg bg-muted text-foreground shrink-0 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110 transition-all duration-300">
+                    <item.icon className="size-5" />
                   </div>
-                  <div className="text-sm text-muted-foreground mt-0.5">{item.description}</div>
-                </div>
-              </Link>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground flex items-center gap-1.5">
+                      {item.label}
+                      <ArrowRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-0.5">{item.description}</div>
+                  </div>
+                </Link>
+              </Reveal>
             ))}
           </div>
         )}

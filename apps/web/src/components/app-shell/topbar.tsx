@@ -38,7 +38,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-14 border-b border-border bg-background flex items-center gap-3 px-4">
+    <header className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center gap-3 px-4 shadow-sm shadow-foreground/[0.02] z-10">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="sm" className="lg:hidden">
@@ -50,11 +50,11 @@ export function Topbar() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 max-w-md relative hidden sm:block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+      <div className="flex-1 max-w-md relative hidden sm:block group">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
         <input
           placeholder="Search students, faculty, invoices…"
-          className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+          className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-1.5 text-sm outline-none transition-shadow focus:ring-2 focus:ring-ring/50 focus:border-ring"
         />
       </div>
 
@@ -64,9 +64,9 @@ export function Topbar() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <Avatar className="size-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+          <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring transition-transform hover:scale-105">
+            <Avatar className="size-8 ring-2 ring-transparent hover:ring-primary/20 transition-all">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs font-semibold">
                 {me ? initials(me.full_name) : "?"}
               </AvatarFallback>
             </Avatar>

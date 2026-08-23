@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 
 export default function ContactPage() {
   const [submitting, setSubmitting] = useState(false);

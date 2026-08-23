@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ShieldCheck, Lock, FileSearch, Building, ShieldHalf } from "lucide-react";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 
 export const metadata: Metadata = {
   title: "Security",

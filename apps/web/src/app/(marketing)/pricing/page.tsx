@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {

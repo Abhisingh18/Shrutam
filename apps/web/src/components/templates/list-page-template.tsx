@@ -11,6 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Reveal } from "@/components/shared/reveal";
 
 interface ListPageTemplateProps {
   title: string;
@@ -46,7 +47,7 @@ export function ListPageTemplate({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
+      <Reveal className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
         <div>
           <h1 className="text-xl font-semibold text-foreground">{title}</h1>
           {description && (
@@ -54,9 +55,11 @@ export function ListPageTemplate({
           )}
         </div>
         {primaryAction && (
-          <Button onClick={primaryAction.onClick}>{primaryAction.label}</Button>
+          <Button className="hover:-translate-y-0.5 transition-transform" onClick={primaryAction.onClick}>
+            {primaryAction.label}
+          </Button>
         )}
-      </div>
+      </Reveal>
 
       {(search || toolbarExtra) && (
         <div className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-muted/40">

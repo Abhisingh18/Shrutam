@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Check, Circle, Loader, Map } from "lucide-react";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {

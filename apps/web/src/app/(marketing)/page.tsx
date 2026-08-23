@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductMockup } from "@/components/marketing/product-mockup";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 
 const METRICS = [
   { value: "12", label: "core modules shipped" },

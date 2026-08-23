@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Reveal } from "@/components/marketing/reveal";
+import { Reveal } from "@/components/shared/reveal";
 
 export const metadata: Metadata = {
   title: "Terms of Service",

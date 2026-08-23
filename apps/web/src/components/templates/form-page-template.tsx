@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/shared/reveal";
 
 interface FormPageTemplateProps {
   title: string;
@@ -24,18 +25,20 @@ export function FormPageTemplate({
 }: FormPageTemplateProps) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col h-full">
-      <div className="px-6 py-5 border-b border-border">
+      <Reveal className="px-6 py-5 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">{title}</h1>
         {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
-      </div>
+      </Reveal>
 
-      <div className="flex-1 overflow-auto px-6 py-6 max-w-2xl space-y-6">{children}</div>
+      <Reveal delay={60} className="flex-1 overflow-auto px-6 py-6 max-w-2xl space-y-6">
+        {children}
+      </Reveal>
 
       <div className="sticky bottom-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-background/95 backdrop-blur">
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={submitting} className="hover:-translate-y-0.5 transition-transform">
           {submitting ? "Saving…" : submitLabel}
         </Button>
       </div>
